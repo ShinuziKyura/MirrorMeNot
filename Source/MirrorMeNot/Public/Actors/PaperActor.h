@@ -24,15 +24,27 @@ public:
 	// Called to bind functionality to input
 	void SetupPlayerInputComponent(class UInputComponent * PlayerInputComponent) override;
 
-private:
-	class UPaperFlipbookComponent* FlipbookComponent;
-
+protected:
 	void MoveUp();
 
 	void MoveDown();
 
+	UFUNCTION(BlueprintImplementableEvent)
 	void MoveLeft();
 
 	void MoveRight();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Actor")
+	class USphereComponent* SphereComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Paper Actor")
+	class UPaperFlipbookComponent* FlipbookComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Actor|Collision")
+	FVector ClosestPoint;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Actor|Collision")
+	float DistanceToPoint;
+
+	uint8 bCanJump : 1;
+	uint8 bCanDrop : 1;
 };
