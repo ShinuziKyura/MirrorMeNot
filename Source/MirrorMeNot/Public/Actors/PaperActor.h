@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "WorldCollision.h"
 #include "Components/InputComponent.h"
 #include "PaperActor.generated.h"
 
@@ -15,18 +16,15 @@ class MIRRORMENOT_API APaperActor : public APawn
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this actor's properties
 	APaperActor(FObjectInitializer const& ObjectInitializer);
 
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent * PlayerInputComponent) override;
 
+	// Utility method to setup inputs
 	template <class UserClass>
 	void BindAction(UInputComponent* PlayerInputComponent, const FName ActionName, UserClass* Object, typename TBaseDelegate<void, bool>::TUObjectMethodDelegate<UserClass>::FMethodPtr Func)
 	{
@@ -35,6 +33,12 @@ public:
 	}
 
 protected:
+	struct EFlightState
+	{
+		static const uint8 None = 0b00;
+		static const uint8 Jumping = 0b01;
+		static const uint8 Falling = 0b10;
+	};
 	struct EMovementDirection
 	{
 		static const uint8 None = 0b00;
@@ -44,27 +48,38 @@ protected:
 
 	void JumpUp(const bool bPressed);
 
-	void DropDown();
+	void FallDown(const bool bPressed);
 
 	void MoveLeft(const bool bPressed);
 
 	void MoveRight(const bool bPressed);
 
-	UFUNCTION()
-	void OnComponentHitHandler(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Actor")
-	class USphereComponent* SphereComponent;
+	class UCapsuleComponent* PhysicsBodyComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Actor")
 	class UPaperFlipbookComponent* FlipbookComponent;
 
+	UPROPERTY(EditAnywhere, Category = "Paper Actor, Debug")
+	bool bDrawDebugTraces;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Actor, Movement")
+	float JumpMultiplier;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Actor, Movement")
+	float MovementMultiplier;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Actor, Movement")
+	float MaxVelocityMultiplier;
+
+	float ReferenceVelocity;
 	float JumpDuration;
 
-	uint8 bIsJumping : 1;
-	uint8 bIsFalling : 1;
+	FTraceHandle GroundCollisionHandle;
+	FCollisionQueryParams GroundCollisionParams;
+
+	uint8 bIsFlying : 2;
 	uint8 bIsMoving : 2;
 
+	static const float MaxJumpDuration;
 	static const FName PaperActor_ProfileName;
 };
 

@@ -2,88 +2,124 @@
 
 #include "Actors/PaperActor.h"
 #include "Engine/CollisionProfile.h"
-#include "Components/SphereComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "PaperFlipbookComponent.h"
 #include "GameFramework/WorldSettings.h"
+#include "DrawDebugHelpers.h"
 
 DEFINE_LOG_CATEGORY(LogPaperActor)
 
+const float APaperActor::MaxJumpDuration = .1f;
 const FName APaperActor::PaperActor_ProfileName(TEXT("PaperActor"));
 
 APaperActor::APaperActor(FObjectInitializer const& ObjectInitializer)
 	: Super(ObjectInitializer)
-	, JumpDuration(0.0f)
-	, bIsJumping(false)
-	, bIsFalling(false)
-	, bIsMoving(false)
+	, bDrawDebugTraces(false)
+	, JumpMultiplier(3.5f)
+	, MovementMultiplier(3.f)
+	, MaxVelocityMultiplier(.3f)
+	, ReferenceVelocity(0.f)
+	, JumpDuration(0.f)
+	, bIsFlying(EFlightState::None)
+	, bIsMoving(EMovementDirection::None)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComponent0"));
+	PhysicsBodyComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleComponent0"));
 	FlipbookComponent = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("PaperFlipbookComponent0"));
 
-	SetRootComponent(SphereComponent);
+	SetRootComponent(PhysicsBodyComponent);
 
-	SphereComponent->SetSimulatePhysics(true);
-	SphereComponent->SetNotifyRigidBodyCollision(true);
-	SphereComponent->SetCollisionProfileName(PaperActor_ProfileName);
+	PhysicsBodyComponent->SetSimulatePhysics(true);
+	PhysicsBodyComponent->SetNotifyRigidBodyCollision(true);
+	PhysicsBodyComponent->SetCollisionProfileName(PaperActor_ProfileName);
 	
-	FlipbookComponent->SetupAttachment(SphereComponent);
+	FlipbookComponent->SetupAttachment(PhysicsBodyComponent);
 	FlipbookComponent->SetGenerateOverlapEvents(false);
 	FlipbookComponent->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 }
 
-// Called when the game starts or when spawned
 void APaperActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SphereComponent->OnComponentHit.AddDynamic(this, &APaperActor::OnComponentHitHandler);
+	ReferenceVelocity = -GetWorld()->GetGravityZ();
+	
+	GroundCollisionParams.AddIgnoredActor(this);
 }
 
-// Called every frame
 void APaperActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// TODO adjust these values according to GetWorld()->GetGravityZ()
-	
-	// Clamp maximum speed
-	auto LinearVelocity = SphereComponent->GetPhysicsLinearVelocity();
-	LinearVelocity.X = FMath::Clamp(LinearVelocity.X, -370.f * 2.f, 370.f * 2.f);
-	SphereComponent->SetPhysicsLinearVelocity(LinearVelocity);
+	UWorld* World = GetWorld();
 
-	if (bIsJumping)
+	// Process last frame trace
+	FTraceDatum GroundCollision;
+	if (World->QueryTraceData(GroundCollisionHandle, GroundCollision))
 	{
-		SphereComponent->AddForce(FVector(0.f, 0.f, 9800.f), NAME_None, true);
+		if (bDrawDebugTraces)
+		{
+			DrawDebugLine(World, GroundCollision.Start, GroundCollision.End, FColor::Green, false, 1.f, 0, 1.f);
+		}
+
+		if (GroundCollision.OutHits.Num())
+		{
+			JumpDuration = 0.f;
+			bIsFlying = EFlightState::None;
+
+			DrawDebugSphere(World, GroundCollision.OutHits.Last().ImpactPoint, 1.f, 16, FColor::Red, false, 1.f, 0, 1.f);
+		}
+	}
+
+	// Clamp maximum speed
+	auto LinearVelocity = PhysicsBodyComponent->GetPhysicsLinearVelocity();
+	LinearVelocity.X = FMath::Clamp(LinearVelocity.X, -ReferenceVelocity * MaxVelocityMultiplier, ReferenceVelocity * MaxVelocityMultiplier);
+	PhysicsBodyComponent->SetPhysicsLinearVelocity(LinearVelocity);
+
+	auto NewAcceleration = FVector::ZeroVector;
+
+	if (bIsFlying == EFlightState::Jumping)
+	{
+		NewAcceleration.Z += ReferenceVelocity * JumpMultiplier;
+
 		JumpDuration += DeltaTime;
-		bIsJumping = JumpDuration <= .1f;
+		bIsFlying = JumpDuration <= MaxJumpDuration ? EFlightState::Jumping : EFlightState::Falling;
 	}
 
 	switch (bIsMoving)
 	{
 		case EMovementDirection::Left:
-			SphereComponent->AddForce(FVector(-3700.f * 2.f, 0.f, 0.f), NAME_None, true);
+			NewAcceleration.X += ReferenceVelocity * -MovementMultiplier;
 			break;
 		case EMovementDirection::Right:
-			SphereComponent->AddForce(FVector(3700.f * 2.f, 0.f, 0.f), NAME_None, true);
+			NewAcceleration.X += ReferenceVelocity * MovementMultiplier;
 			break;
 		case EMovementDirection::None:
-			if (FMath::IsNearlyZero(JumpDuration)) // TODO preference regarding this behaviour
-			{
-				SphereComponent->AddImpulse(FVector(-LinearVelocity.X * 10.f, 0.f, 0.f));
-			}
+			NewAcceleration.X += -LinearVelocity.X * MovementMultiplier;
 			break;
 	}
-	
-//	UE_LOG(LogPaperActor, Log, TEXT("%s"), *LinearVelocity.ToString())
+
+	PhysicsBodyComponent->AddForce(NewAcceleration, NAME_None, true);
+
+	// Test for collision
+	if (bIsFlying == EFlightState::Falling)
+	{
+		const auto Start = PhysicsBodyComponent->GetComponentLocation();
+		const auto End = Start - FVector(0.f, 0.f, PhysicsBodyComponent->GetUnscaledCapsuleHalfHeight() + 1.f);
+
+		if (bDrawDebugTraces)
+		{
+			GroundCollisionHandle = World->AsyncLineTraceByChannel(EAsyncTraceType::Single, Start, End, ECC_Visibility, GroundCollisionParams);
+		}
+	}
 }
 
+// TODO remove this
 void APaperActor::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	// TODO remove this
 	BindAction(PlayerInputComponent, TEXT("Up"), this, &APaperActor::JumpUp);
 	BindAction(PlayerInputComponent, TEXT("Left"), this, &APaperActor::MoveLeft);
 	BindAction(PlayerInputComponent, TEXT("Right"), this, &APaperActor::MoveRight);
@@ -91,7 +127,26 @@ void APaperActor::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 void APaperActor::JumpUp(const bool bPressed)
 {
-	bIsJumping = bPressed;
+	if (bPressed)
+	{
+		if (bIsFlying == EFlightState::None)
+		{
+			bIsFlying = EFlightState::Jumping;
+		}
+	}
+	else if (bIsFlying == EFlightState::Jumping)
+	{
+		bIsFlying = EFlightState::Falling;
+	}
+}
+
+void APaperActor::FallDown(const bool bPressed)
+{
+	if (bPressed)
+	{
+		bIsFlying = EFlightState::Falling;
+		// TODO logic to fall through
+	}
 }
 
 void APaperActor::MoveLeft(const bool bPressed)
@@ -116,16 +171,4 @@ void APaperActor::MoveRight(const bool bPressed)
 	{
 		bIsMoving = EMovementDirection::None;
 	}
-}
-
-void APaperActor::OnComponentHitHandler(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
-{
-	// TODO proper checking ground collision (ray traces sound good)
-	JumpDuration = 0.f;
-
-	auto LinearVelocity = SphereComponent->GetPhysicsLinearVelocity();
-	LinearVelocity.Z = 0.f;
-	SphereComponent->SetPhysicsLinearVelocity(LinearVelocity);
-
-	UE_LOG(LogPaperActor, Log, TEXT("That's a hit!"));
 }
