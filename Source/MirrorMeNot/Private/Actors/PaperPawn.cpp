@@ -1,18 +1,19 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Actors/PaperActor.h"
+#include "Actors/PaperPawn.h"
 #include "Engine/CollisionProfile.h"
 #include "Components/CapsuleComponent.h"
+#include "PaperNavMovementComponent.h"
 #include "PaperFlipbookComponent.h"
 #include "GameFramework/WorldSettings.h"
 #include "DrawDebugHelpers.h"
 
-DEFINE_LOG_CATEGORY(LogPaperActor)
+DEFINE_LOG_CATEGORY(LogPaperPawn)
 
-const float APaperActor::MaxJumpDuration = .1f;
-const FName APaperActor::PaperActor_ProfileName(TEXT("PaperActor"));
+const float APaperPawn::MaxJumpDuration = .1f;
+const FName APaperPawn::PaperPawn_ProfileName(TEXT("PaperPawn"));
 
-APaperActor::APaperActor(FObjectInitializer const& ObjectInitializer)
+APaperPawn::APaperPawn(FObjectInitializer const& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, bDrawDebugTraces(false)
 	, JumpMultiplier(3.5f)
@@ -20,26 +21,29 @@ APaperActor::APaperActor(FObjectInitializer const& ObjectInitializer)
 	, MaxVelocityMultiplier(.3f)
 	, ReferenceVelocity(0.f)
 	, JumpDuration(0.f)
-	, bIsFlying(EFlightState::None)
-	, bIsMoving(EMovementDirection::None)
+	, bIsInAir(EAerialMovement::None)
+	, bIsOnGround(EGroundMovement::None)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
 	PhysicsBodyComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleComponent0"));
+	MovementComponent = CreateDefaultSubobject<UPaperNavMovementComponent>(TEXT("PaperNavMovementComponent0"));
 	FlipbookComponent = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("PaperFlipbookComponent0"));
 
 	SetRootComponent(PhysicsBodyComponent);
 
 	PhysicsBodyComponent->SetSimulatePhysics(true);
 	PhysicsBodyComponent->SetNotifyRigidBodyCollision(true);
-	PhysicsBodyComponent->SetCollisionProfileName(PaperActor_ProfileName);
+	PhysicsBodyComponent->SetCollisionProfileName(PaperPawn_ProfileName);
+
+	MovementComponent->SetUpdatedComponent(PhysicsBodyComponent);
 	
 	FlipbookComponent->SetupAttachment(PhysicsBodyComponent);
 	FlipbookComponent->SetGenerateOverlapEvents(false);
 	FlipbookComponent->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 }
 
-void APaperActor::BeginPlay()
+void APaperPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -48,7 +52,7 @@ void APaperActor::BeginPlay()
 	GroundCollisionParams.AddIgnoredActor(this);
 }
 
-void APaperActor::Tick(float DeltaTime)
+void APaperPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
@@ -66,7 +70,7 @@ void APaperActor::Tick(float DeltaTime)
 		if (GroundCollision.OutHits.Num())
 		{
 			JumpDuration = 0.f;
-			bIsFlying = EFlightState::None;
+			bIsInAir = EAerialMovement::None;
 
 			DrawDebugSphere(World, GroundCollision.OutHits.Last().ImpactPoint, 1.f, 16, FColor::Red, false, 1.f, 0, 1.f);
 		}
@@ -79,23 +83,23 @@ void APaperActor::Tick(float DeltaTime)
 
 	auto NewAcceleration = FVector::ZeroVector;
 
-	if (bIsFlying == EFlightState::Jumping)
+	if (bIsInAir == EAerialMovement::Jumping)
 	{
 		NewAcceleration.Z += ReferenceVelocity * JumpMultiplier;
 
 		JumpDuration += DeltaTime;
-		bIsFlying = JumpDuration <= MaxJumpDuration ? EFlightState::Jumping : EFlightState::Falling;
+		bIsInAir = JumpDuration <= MaxJumpDuration ? EAerialMovement::Jumping : EAerialMovement::Falling;
 	}
 
-	switch (bIsMoving)
+	switch (bIsOnGround)
 	{
-		case EMovementDirection::Left:
+		case EGroundMovement::Left:
 			NewAcceleration.X += ReferenceVelocity * -MovementMultiplier;
 			break;
-		case EMovementDirection::Right:
+		case EGroundMovement::Right:
 			NewAcceleration.X += ReferenceVelocity * MovementMultiplier;
 			break;
-		case EMovementDirection::None:
+		case EGroundMovement::None:
 			NewAcceleration.X += -LinearVelocity.X * MovementMultiplier;
 			break;
 	}
@@ -103,7 +107,7 @@ void APaperActor::Tick(float DeltaTime)
 	PhysicsBodyComponent->AddForce(NewAcceleration, NAME_None, true);
 
 	// Test for collision
-	if (bIsFlying == EFlightState::Falling)
+	if (bIsInAir == EAerialMovement::Falling)
 	{
 		const auto Start = PhysicsBodyComponent->GetComponentLocation();
 		const auto End = Start - FVector(0.f, 0.f, PhysicsBodyComponent->GetUnscaledCapsuleHalfHeight() + 1.f);
@@ -116,59 +120,59 @@ void APaperActor::Tick(float DeltaTime)
 }
 
 // TODO remove this
-void APaperActor::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void APaperPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	BindAction(PlayerInputComponent, TEXT("Up"), this, &APaperActor::JumpUp);
-	BindAction(PlayerInputComponent, TEXT("Left"), this, &APaperActor::MoveLeft);
-	BindAction(PlayerInputComponent, TEXT("Right"), this, &APaperActor::MoveRight);
+	BindAction(PlayerInputComponent, TEXT("Up"), this, &APaperPawn::JumpUp);
+	BindAction(PlayerInputComponent, TEXT("Left"), this, &APaperPawn::MoveLeft);
+	BindAction(PlayerInputComponent, TEXT("Right"), this, &APaperPawn::MoveRight);
 }
 
-void APaperActor::JumpUp(const bool bPressed)
+void APaperPawn::JumpUp(const bool bPressed)
 {
 	if (bPressed)
 	{
-		if (bIsFlying == EFlightState::None)
+		if (bIsInAir == EAerialMovement::None)
 		{
-			bIsFlying = EFlightState::Jumping;
+			bIsInAir = EAerialMovement::Jumping;
 		}
 	}
-	else if (bIsFlying == EFlightState::Jumping)
+	else if (bIsInAir == EAerialMovement::Jumping)
 	{
-		bIsFlying = EFlightState::Falling;
+		bIsInAir = EAerialMovement::Falling;
 	}
 }
 
-void APaperActor::FallDown(const bool bPressed)
+void APaperPawn::FallDown(const bool bPressed)
 {
 	if (bPressed)
 	{
-		bIsFlying = EFlightState::Falling;
+		bIsInAir = EAerialMovement::Falling;
 		// TODO logic to fall through
 	}
 }
 
-void APaperActor::MoveLeft(const bool bPressed)
+void APaperPawn::MoveLeft(const bool bPressed)
 {
 	if (bPressed)
 	{
-		bIsMoving = EMovementDirection::Left;
+		bIsOnGround = EGroundMovement::Left;
 	}
-	else if (bIsMoving == EMovementDirection::Left)
+	else if (bIsOnGround == EGroundMovement::Left)
 	{
-		bIsMoving = EMovementDirection::None;
+		bIsOnGround = EGroundMovement::None;
 	}
 }
 
-void APaperActor::MoveRight(const bool bPressed)
+void APaperPawn::MoveRight(const bool bPressed)
 {
 	if (bPressed)
 	{
-		bIsMoving = EMovementDirection::Right;
+		bIsOnGround = EGroundMovement::Right;
 	}
-	else if (bIsMoving == EMovementDirection::Right)
+	else if (bIsOnGround == EGroundMovement::Right)
 	{
-		bIsMoving = EMovementDirection::None;
+		bIsOnGround = EGroundMovement::None;
 	}
 }

@@ -6,17 +6,17 @@
 #include "GameFramework/Pawn.h"
 #include "WorldCollision.h"
 #include "Components/InputComponent.h"
-#include "PaperActor.generated.h"
+#include "PaperPawn.generated.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogPaperActor, Log, All)
+DECLARE_LOG_CATEGORY_EXTERN(LogPaperPawn, Log, All)
 
 UCLASS()
-class MIRRORMENOT_API APaperActor : public APawn
+class MIRRORMENOT_API APaperPawn : public APawn // TODO rename it to APaperPawn ?
 {
 	GENERATED_BODY()
 
 public:
-	APaperActor(FObjectInitializer const& ObjectInitializer);
+	APaperPawn(FObjectInitializer const& ObjectInitializer);
 
 	virtual void BeginPlay() override;
 
@@ -33,13 +33,13 @@ public:
 	}
 
 protected:
-	struct EFlightState
+	struct EAerialMovement
 	{
 		static const uint8 None = 0b00;
 		static const uint8 Jumping = 0b01;
 		static const uint8 Falling = 0b10;
 	};
-	struct EMovementDirection
+	struct EGroundMovement
 	{
 		static const uint8 None = 0b00;
 		static const uint8 Left = 0b01;
@@ -58,16 +58,19 @@ protected:
 	class UCapsuleComponent* PhysicsBodyComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Actor")
+	class UPaperNavMovementComponent* MovementComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Actor")
 	class UPaperFlipbookComponent* FlipbookComponent;
 
-	UPROPERTY(EditAnywhere, Category = "Paper Actor, Debug")
+	UPROPERTY(EditAnywhere, Category = "Paper Actor | Debug")
 	bool bDrawDebugTraces;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Actor, Movement")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Actor | Movement")
 	float JumpMultiplier;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Actor, Movement")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Actor | Movement")
 	float MovementMultiplier;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Actor, Movement")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Actor | Movement")
 	float MaxVelocityMultiplier;
 
 	float ReferenceVelocity;
@@ -76,10 +79,10 @@ protected:
 	FTraceHandle GroundCollisionHandle;
 	FCollisionQueryParams GroundCollisionParams;
 
-	uint8 bIsFlying : 2;
-	uint8 bIsMoving : 2;
+	uint8 bIsInAir : 2;
+	uint8 bIsOnGround : 2;
 
 	static const float MaxJumpDuration;
-	static const FName PaperActor_ProfileName;
+	static const FName PaperPawn_ProfileName;
 };
 
