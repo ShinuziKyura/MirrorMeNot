@@ -56,7 +56,7 @@ void APaperPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	UWorld* World = GetWorld();
+/*	UWorld* World = GetWorld();
 
 	// Process last frame trace
 	FTraceDatum GroundCollision;
@@ -116,7 +116,7 @@ void APaperPawn::Tick(float DeltaTime)
 		{
 			GroundCollisionHandle = World->AsyncLineTraceByChannel(EAsyncTraceType::Single, Start, End, ECC_Visibility, GroundCollisionParams);
 		}
-	}
+	} */
 }
 
 // TODO remove this

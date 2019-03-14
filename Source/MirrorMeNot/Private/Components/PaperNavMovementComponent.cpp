@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "PaperNavMovementComponent.h"
+#include "Components/PrimitiveComponent.h"
 
 DEFINE_LOG_CATEGORY(LogPaperNavMovementComponent)
 
@@ -23,6 +24,8 @@ FBasedPosition UPaperNavMovementComponent::GetActorFeetLocationBased() const
 void UPaperNavMovementComponent::RequestDirectMove(const FVector& MoveVelocity, bool bForceMaxSpeed)
 {
 	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("RequestDirectMove: %s; %s"), *MoveVelocity.ToString(), bForceMaxSpeed ? TEXT("true") : TEXT("false"));
+
+	UpdatedPrimitive->AddImpulse(MoveVelocity);
 }
 
 void UPaperNavMovementComponent::RequestPathMove(const FVector& MoveInput)
