@@ -60,9 +60,11 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Pawn | Movement")
 	float MaximumJumpDuration;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Paper Pawn | Debug")
-	uint8 bDrawDebugTraces : 1;
+	uint8 bDrawDebugSweeps : 1;
+	UPROPERTY(EditAnywhere, Category = "Paper Pawn | Debug")
+	uint8 bDrawDebugHits : 1;
 
 	uint8 bIsAerial : 2;
 	uint8 bIsMoving : 2;
@@ -72,6 +74,7 @@ private:
 	void LevelCollisionHandler(FTraceHandle const & TraceHandle, FTraceDatum & TraceDatum);
 
 	FCollisionObjectQueryParams LevelCollisionObjectParams;
+	FCollisionShape LevelCollisionShape;
 	FCollisionQueryParams LevelCollisionParams;
 	FTraceDelegate LevelCollisionDelegate;
 

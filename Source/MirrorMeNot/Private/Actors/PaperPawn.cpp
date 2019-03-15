@@ -17,8 +17,9 @@ APaperPawn::APaperPawn(FObjectInitializer const & ObjectInitializer)
 	, MovementMultiplier(450.f)
 	, JumpMultiplier(450.f)
 	, MaximumJumpDuration(.2f)
-	, bDrawDebugTraces(false)
-	, bIsAerial(EAerialMovement::None)
+	, bDrawDebugSweeps(false)
+	, bDrawDebugHits(false)
+	, bIsAerial(EAerialMovement::None) // TODO maybe should be Falling on start (is bStartPenetrating a problem?)
 	, bIsMoving(EMovementDirection::None)
 	, JumpDuration(0.f)
 {
@@ -40,6 +41,7 @@ void APaperPawn::BeginPlay()
 	Super::BeginPlay();
 
 	LevelCollisionObjectParams.AddObjectTypesToQuery(ECC_Level);
+	LevelCollisionShape.SetSphere(CollisionComponent->GetUnscaledCapsuleRadius());
 	LevelCollisionParams.AddIgnoredActor(this);
 	LevelCollisionDelegate.BindUObject(this, &APaperPawn::LevelCollisionHandler);
 }
@@ -74,8 +76,6 @@ void APaperPawn::Tick(float DeltaTime)
 	else if (IsFalling())
 	{
 		QueryLevelCollision();
-
-		// TODO maybe implement slide off walls (zero friction PhysicalMaterial works)
 	}
 
 	CollisionComponent->SetPhysicsLinearVelocity(FVector(Input.X * MovementMultiplier, 0.f, IsJumping() ? Input.Y * JumpMultiplier : LinearVelocityZ));
@@ -103,10 +103,18 @@ FVector2D APaperPawn::GetInputVector() const
 
 void APaperPawn::QueryLevelCollision()
 {
-	const auto Start = CollisionComponent->GetComponentLocation();
-	const auto End = Start - FVector::UpVector * (CollisionComponent->GetUnscaledCapsuleHalfHeight() + 1.f);
+	const auto Point = CollisionComponent->GetComponentLocation() - FVector::UpVector * (CollisionComponent->GetUnscaledCapsuleHalfHeight() - CollisionComponent->GetUnscaledCapsuleRadius());
+	const auto Direction = Point - FVector::UpVector;
 
-	GetWorld()->AsyncLineTraceByObjectType(EAsyncTraceType::Single, Start, End, LevelCollisionObjectParams, LevelCollisionParams, &LevelCollisionDelegate);
+	GetWorld()->AsyncSweepByObjectType(
+		EAsyncTraceType::Single, 
+		Point,
+		Direction,
+		LevelCollisionObjectParams, 
+		LevelCollisionShape,
+		LevelCollisionParams, 
+		&LevelCollisionDelegate
+	);
 }
 
 void APaperPawn::LevelCollisionHandler(FTraceHandle const & TraceHandle, FTraceDatum & TraceDatum)
@@ -118,13 +126,18 @@ void APaperPawn::LevelCollisionHandler(FTraceHandle const & TraceHandle, FTraceD
 		JumpDuration = 0.f;
 	}
 
-	if (bDrawDebugTraces)
+	if (bDrawDebugSweeps)
 	{
-		DrawDebugLine(GetWorld(), TraceDatum.Start, TraceDatum.End, FColor::Green, false, 1.f, 0, 1.f);
+		UWorld * World = GetWorld();
 
-		if (bValidHit)
-		{
-			DrawDebugSphere(GetWorld(), TraceDatum.OutHits.Last().ImpactPoint, 2.f, 8, FColor::Red, false, 1.f, 0, 1.f);
+		DrawDebugSphere(World, TraceDatum.End, CollisionComponent->GetUnscaledCapsuleRadius(), 16, bValidHit ? FColor::Red : FColor::Yellow, false, .5f, 0, .1f);
+
+		if (bDrawDebugHits && bValidHit)
+		{ 
+			const auto ImpactPoint = TraceDatum.OutHits.Last().ImpactPoint;
+			
+			DrawDebugLine(World, ImpactPoint + FVector::ForwardVector * 5.f, ImpactPoint - FVector::ForwardVector * 5.f, FColor::Red, false, 1.f, 0, 1.f);
+			DrawDebugLine(World, ImpactPoint + FVector::RightVector * 5.f, ImpactPoint - FVector::RightVector * 5.f, FColor::Red, false, 1.f, 0, 1.f);
 		}
 	}
 }

@@ -8,6 +8,10 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogPaperNavMovementComponent, Log, All)
 
+// TODO read documentation:
+// https://docs.unrealengine.com/en-us/Engine/Components/Navigation
+// https://docs.unrealengine.com/en-us/Resources/ContentExamples/NavMesh
+
 /**
  * 
  */
