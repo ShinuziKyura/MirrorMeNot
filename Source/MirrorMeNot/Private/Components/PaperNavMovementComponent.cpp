@@ -5,32 +5,17 @@
 
 DEFINE_LOG_CATEGORY(LogPaperNavMovementComponent)
 
-void UPaperNavMovementComponent::StopActiveMovement()
+UPaperNavMovementComponent::UPaperNavMovementComponent(FObjectInitializer const& ObjectInitializer)
+	: Super(ObjectInitializer)
+	, InputVector(FVector2D::ZeroVector)
 {
-	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("StopActiveMovement"));
+	bUseAccelerationForPaths = true;
 }
 
-void UPaperNavMovementComponent::StopMovementImmediately()
+bool UPaperNavMovementComponent::CanStartPathFollowing() const
 {
-	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("StopMovementImmediately"));
-}
-
-FBasedPosition UPaperNavMovementComponent::GetActorFeetLocationBased() const
-{
-	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("GetActorFeetLocationBased"));
-	return Super::GetActorFeetLocationBased();
-}
-
-void UPaperNavMovementComponent::RequestDirectMove(const FVector& MoveVelocity, bool bForceMaxSpeed)
-{
-	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("RequestDirectMove: %s; %s"), *MoveVelocity.ToString(), bForceMaxSpeed ? TEXT("true") : TEXT("false"));
-
-	UpdatedPrimitive->AddImpulse(MoveVelocity);
-}
-
-void UPaperNavMovementComponent::RequestPathMove(const FVector& MoveInput)
-{
-	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("RequestPathMove: %s"), *MoveInput.ToString());
+	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("CanStartPathFollowing"));
+	return Super::CanStartPathFollowing();
 }
 
 bool UPaperNavMovementComponent::CanStopPathFollowing() const
@@ -38,17 +23,17 @@ bool UPaperNavMovementComponent::CanStopPathFollowing() const
 	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("CanStopPathFollowing"));
 	return Super::CanStopPathFollowing();
 }
-
+/*
+FBasedPosition UPaperNavMovementComponent::GetActorFeetLocationBased() const
+{
+	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("GetActorFeetLocationBased"));
+	return Super::GetActorFeetLocationBased();
+}
+*/
 float UPaperNavMovementComponent::GetPathFollowingBrakingDistance(float MaxSpeed) const
 {
 	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("GetPathFollowingBrakingDistance: %f"), MaxSpeed);
 	return Super::GetPathFollowingBrakingDistance(MaxSpeed);
-}
-
-bool UPaperNavMovementComponent::CanStartPathFollowing() const
-{
-	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("CanStartPathFollowing"));
-	return Super::CanStartPathFollowing();
 }
 
 bool UPaperNavMovementComponent::IsCrouching() const
@@ -63,6 +48,12 @@ bool UPaperNavMovementComponent::IsFalling() const
 	return Super::IsFalling();
 }
 
+bool UPaperNavMovementComponent::IsFlying() const
+{
+	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("IsFlying"));
+	return Super::IsFlying();
+}
+
 bool UPaperNavMovementComponent::IsMovingOnGround() const
 {
 	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("IsMovingOnGround"));
@@ -75,8 +66,28 @@ bool UPaperNavMovementComponent::IsSwimming() const
 	return Super::IsSwimming();
 }
 
-bool UPaperNavMovementComponent::IsFlying() const
+void UPaperNavMovementComponent::RequestDirectMove(const FVector& MoveVelocity, bool bForceMaxSpeed)
 {
-	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("IsFlying"));
-	return Super::IsFlying();
+	// TODO this probably needs to be adjusted to ensure unit values
+	InputVector = FVector2D(MoveVelocity.X, MoveVelocity.Z).ClampAxes(-1.f, 1.f);
+
+	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("RequestDirectMove: %s; %s"), *MoveVelocity.ToString(), bForceMaxSpeed ? TEXT("true") : TEXT("false"));
+}
+
+void UPaperNavMovementComponent::RequestPathMove(const FVector& MoveInput)
+{
+	// TODO this probably needs to be adjusted to ensure unit values
+	InputVector = FVector2D(MoveInput.X, MoveInput.Z).ClampAxes(-1.f, 1.f);
+
+	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("RequestPathMove: %s"), *MoveInput.ToString());
+}
+
+void UPaperNavMovementComponent::StopActiveMovement()
+{
+	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("StopActiveMovement"));
+}
+
+FVector2D const& UPaperNavMovementComponent::GetInputVector() const
+{
+	return InputVector;
 }

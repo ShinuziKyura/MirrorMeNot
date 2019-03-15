@@ -2,43 +2,35 @@
 
 #include "Actors/PaperPawn.h"
 #include "Engine/CollisionProfile.h"
+#include "Engine/CustomCollisionProfile.h"
+#include "Engine/CustomEngineTypes.h"
 #include "Components/CapsuleComponent.h"
-#include "PaperNavMovementComponent.h"
 #include "PaperFlipbookComponent.h"
-#include "GameFramework/WorldSettings.h"
 #include "DrawDebugHelpers.h"
 
 DEFINE_LOG_CATEGORY(LogPaperPawn)
 
-const float APaperPawn::MaxJumpDuration = .1f;
-const FName APaperPawn::PaperPawn_ProfileName(TEXT("PaperPawn"));
-
-APaperPawn::APaperPawn(FObjectInitializer const& ObjectInitializer)
+APaperPawn::APaperPawn(FObjectInitializer const & ObjectInitializer)
 	: Super(ObjectInitializer)
+	, CollisionComponent(ObjectInitializer.CreateDefaultSubobject<UCapsuleComponent>(this, TEXT("CapsuleComponent")))
+	, FlipbookComponent(ObjectInitializer.CreateDefaultSubobject<UPaperFlipbookComponent>(this, TEXT("PaperFlipbookComponent")))
+	, MovementMultiplier(450.f)
+	, JumpMultiplier(450.f)
+	, MaximumJumpDuration(.2f)
 	, bDrawDebugTraces(false)
-	, JumpMultiplier(3.5f)
-	, MovementMultiplier(3.f)
-	, MaxVelocityMultiplier(.3f)
-	, ReferenceVelocity(0.f)
+	, bIsAerial(EAerialMovement::None)
+	, bIsMoving(EMovementDirection::None)
 	, JumpDuration(0.f)
-	, bIsInAir(EAerialMovement::None)
-	, bIsOnGround(EGroundMovement::None)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	PhysicsBodyComponent = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleComponent0"));
-	MovementComponent = CreateDefaultSubobject<UPaperNavMovementComponent>(TEXT("PaperNavMovementComponent0"));
-	FlipbookComponent = CreateDefaultSubobject<UPaperFlipbookComponent>(TEXT("PaperFlipbookComponent0"));
+	SetRootComponent(CollisionComponent);
 
-	SetRootComponent(PhysicsBodyComponent);
+	CollisionComponent->SetSimulatePhysics(true);
+	CollisionComponent->SetNotifyRigidBodyCollision(true);
+	CollisionComponent->SetCollisionProfileName(UCustomCollisionProfile::PaperActor_ProfileName);
 
-	PhysicsBodyComponent->SetSimulatePhysics(true);
-	PhysicsBodyComponent->SetNotifyRigidBodyCollision(true);
-	PhysicsBodyComponent->SetCollisionProfileName(PaperPawn_ProfileName);
-
-	MovementComponent->SetUpdatedComponent(PhysicsBodyComponent);
-	
-	FlipbookComponent->SetupAttachment(PhysicsBodyComponent);
+	FlipbookComponent->SetupAttachment(CollisionComponent);
 	FlipbookComponent->SetGenerateOverlapEvents(false);
 	FlipbookComponent->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 }
@@ -47,132 +39,92 @@ void APaperPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
-	ReferenceVelocity = -GetWorld()->GetGravityZ();
-	
-	GroundCollisionParams.AddIgnoredActor(this);
+	LevelCollisionObjectParams.AddObjectTypesToQuery(ECC_Level);
+	LevelCollisionParams.AddIgnoredActor(this);
+	LevelCollisionDelegate.BindUObject(this, &APaperPawn::LevelCollisionHandler);
 }
 
 void APaperPawn::Tick(float DeltaTime)
 {
+	// TODO add cycle counter
+
 	Super::Tick(DeltaTime);
 
-/*	UWorld* World = GetWorld();
+	const auto Input = GetInputVector();
+	const auto LinearVelocityZ = CollisionComponent->GetPhysicsLinearVelocity().Z;
 
-	// Process last frame trace
-	FTraceDatum GroundCollision;
-	if (World->QueryTraceData(GroundCollisionHandle, GroundCollision))
+	// Input.Y is the kickstarter for a jump
+	if (!FMath::IsNearlyZero(Input.Y) && CanJump())
 	{
-		if (bDrawDebugTraces)
-		{
-			DrawDebugLine(World, GroundCollision.Start, GroundCollision.End, FColor::Green, false, 1.f, 0, 1.f);
-		}
-
-		if (GroundCollision.OutHits.Num())
-		{
-			JumpDuration = 0.f;
-			bIsInAir = EAerialMovement::None;
-
-			DrawDebugSphere(World, GroundCollision.OutHits.Last().ImpactPoint, 1.f, 16, FColor::Red, false, 1.f, 0, 1.f);
-		}
+		bIsAerial = EAerialMovement::Jumping;
+	}
+	else if (IsJumping() && !CanJump())
+	{
+		bIsAerial = EAerialMovement::Falling;
+	}
+	else if (IsFalling() && CanJump())
+	{
+		bIsAerial = EAerialMovement::None;
 	}
 
-	// Clamp maximum speed
-	auto LinearVelocity = PhysicsBodyComponent->GetPhysicsLinearVelocity();
-	LinearVelocity.X = FMath::Clamp(LinearVelocity.X, -ReferenceVelocity * MaxVelocityMultiplier, ReferenceVelocity * MaxVelocityMultiplier);
-	PhysicsBodyComponent->SetPhysicsLinearVelocity(LinearVelocity);
-
-	auto NewAcceleration = FVector::ZeroVector;
-
-	if (bIsInAir == EAerialMovement::Jumping)
+	if (IsJumping())
 	{
-		NewAcceleration.Z += ReferenceVelocity * JumpMultiplier;
-
 		JumpDuration += DeltaTime;
-		bIsInAir = JumpDuration <= MaxJumpDuration ? EAerialMovement::Jumping : EAerialMovement::Falling;
+	}
+	else if (IsFalling())
+	{
+		QueryLevelCollision();
+
+		// TODO maybe implement slide off walls (zero friction PhysicalMaterial works)
 	}
 
-	switch (bIsOnGround)
+	CollisionComponent->SetPhysicsLinearVelocity(FVector(Input.X * MovementMultiplier, 0.f, IsJumping() ? Input.Y * JumpMultiplier : LinearVelocityZ));
+}
+
+bool APaperPawn::IsJumping() const
+{
+	return bIsAerial == EAerialMovement::Jumping;
+}
+
+bool APaperPawn::IsFalling() const
+{
+	return bIsAerial == EAerialMovement::Falling;
+}
+
+bool APaperPawn::CanJump() const
+{
+	return IsFalling() ? FMath::IsNearlyZero(JumpDuration) : JumpDuration <= MaximumJumpDuration;
+}
+
+FVector2D APaperPawn::GetInputVector() const
+{
+	return FVector2D::ZeroVector;
+}
+
+void APaperPawn::QueryLevelCollision()
+{
+	const auto Start = CollisionComponent->GetComponentLocation();
+	const auto End = Start - FVector::UpVector * (CollisionComponent->GetUnscaledCapsuleHalfHeight() + 1.f);
+
+	GetWorld()->AsyncLineTraceByObjectType(EAsyncTraceType::Single, Start, End, LevelCollisionObjectParams, LevelCollisionParams, &LevelCollisionDelegate);
+}
+
+void APaperPawn::LevelCollisionHandler(FTraceHandle const & TraceHandle, FTraceDatum & TraceDatum)
+{
+	const bool bValidHit = TraceDatum.OutHits.Num();
+	
+	if (bValidHit)
 	{
-		case EGroundMovement::Left:
-			NewAcceleration.X += ReferenceVelocity * -MovementMultiplier;
-			break;
-		case EGroundMovement::Right:
-			NewAcceleration.X += ReferenceVelocity * MovementMultiplier;
-			break;
-		case EGroundMovement::None:
-			NewAcceleration.X += -LinearVelocity.X * MovementMultiplier;
-			break;
+		JumpDuration = 0.f;
 	}
 
-	PhysicsBodyComponent->AddForce(NewAcceleration, NAME_None, true);
-
-	// Test for collision
-	if (bIsInAir == EAerialMovement::Falling)
+	if (bDrawDebugTraces)
 	{
-		const auto Start = PhysicsBodyComponent->GetComponentLocation();
-		const auto End = Start - FVector(0.f, 0.f, PhysicsBodyComponent->GetUnscaledCapsuleHalfHeight() + 1.f);
+		DrawDebugLine(GetWorld(), TraceDatum.Start, TraceDatum.End, FColor::Green, false, 1.f, 0, 1.f);
 
-		if (bDrawDebugTraces)
+		if (bValidHit)
 		{
-			GroundCollisionHandle = World->AsyncLineTraceByChannel(EAsyncTraceType::Single, Start, End, ECC_Visibility, GroundCollisionParams);
+			DrawDebugSphere(GetWorld(), TraceDatum.OutHits.Last().ImpactPoint, 2.f, 8, FColor::Red, false, 1.f, 0, 1.f);
 		}
-	} */
-}
-
-// TODO remove this
-void APaperPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-	BindAction(PlayerInputComponent, TEXT("Up"), this, &APaperPawn::JumpUp);
-	BindAction(PlayerInputComponent, TEXT("Left"), this, &APaperPawn::MoveLeft);
-	BindAction(PlayerInputComponent, TEXT("Right"), this, &APaperPawn::MoveRight);
-}
-
-void APaperPawn::JumpUp(const bool bPressed)
-{
-	if (bPressed)
-	{
-		if (bIsInAir == EAerialMovement::None)
-		{
-			bIsInAir = EAerialMovement::Jumping;
-		}
-	}
-	else if (bIsInAir == EAerialMovement::Jumping)
-	{
-		bIsInAir = EAerialMovement::Falling;
-	}
-}
-
-void APaperPawn::FallDown(const bool bPressed)
-{
-	if (bPressed)
-	{
-		bIsInAir = EAerialMovement::Falling;
-		// TODO logic to fall through
-	}
-}
-
-void APaperPawn::MoveLeft(const bool bPressed)
-{
-	if (bPressed)
-	{
-		bIsOnGround = EGroundMovement::Left;
-	}
-	else if (bIsOnGround == EGroundMovement::Left)
-	{
-		bIsOnGround = EGroundMovement::None;
-	}
-}
-
-void APaperPawn::MoveRight(const bool bPressed)
-{
-	if (bPressed)
-	{
-		bIsOnGround = EGroundMovement::Right;
-	}
-	else if (bIsOnGround == EGroundMovement::Right)
-	{
-		bIsOnGround = EGroundMovement::None;
 	}
 }
