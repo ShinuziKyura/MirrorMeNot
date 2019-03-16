@@ -29,18 +29,20 @@ public:
 
 	bool IsFalling() const;
 
+	bool IsMoving() const;
+
 	bool CanJump() const;
 
 	virtual FVector2D GetInputVector() const;
 
 protected:
-	struct EAerialMovement
+	struct EAerialState
 	{
 		static const uint8 None = 0b00;
 		static const uint8 Jumping = 0b01;
 		static const uint8 Falling = 0b10;
 	};
-	struct EMovementDirection
+	struct EMovingDirection
 	{
 		static const uint8 None = 0b00;
 		static const uint8 Left = 0b01;

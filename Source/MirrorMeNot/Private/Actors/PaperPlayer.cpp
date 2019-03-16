@@ -22,23 +22,23 @@ FVector2D APaperPlayer::GetInputVector() const
 	
 	switch (bIsMoving)
 	{
-		case EMovementDirection::Left:
+		case EMovingDirection::Left:
 			Input.X = -1.f;
 			break;
-		case EMovementDirection::Right:
+		case EMovingDirection::Right:
 			Input.X = 1.f;
 			break;
-		case EMovementDirection::None:
+		case EMovingDirection::None:
 		default:
 			break;
 	}
 	switch (bIsAerial)
 	{
-		case EAerialMovement::Jumping:
+		case EAerialState::Jumping:
 			Input.Y = 1.f;
 			break;
-		case EAerialMovement::Falling:
-		case EAerialMovement::None:
+		case EAerialState::Falling:
+		case EAerialState::None:
 		default:
 			break;
 	}
@@ -50,14 +50,14 @@ void APaperPlayer::JumpUp(bool const bPressed)
 {
 	if (bPressed)
 	{
-		if (bIsAerial == EAerialMovement::None)
+		if (bIsAerial == EAerialState::None)
 		{
-			bIsAerial = EAerialMovement::Jumping;
+			bIsAerial = EAerialState::Jumping;
 		}
 	}
-	else if (bIsAerial == EAerialMovement::Jumping)
+	else if (bIsAerial == EAerialState::Jumping)
 	{
-		bIsAerial = EAerialMovement::Falling;
+		bIsAerial = EAerialState::Falling;
 	}
 }
 
@@ -66,7 +66,7 @@ void APaperPlayer::FallDown(bool const bPressed)
 	// TODO behaviour to fall through
 	if (bPressed)
 	{
-		bIsAerial = EAerialMovement::Falling;
+		bIsAerial = EAerialState::Falling;
 	}
 }
 
@@ -74,11 +74,11 @@ void APaperPlayer::MoveLeft(bool const bPressed)
 {
 	if (bPressed)
 	{
-		bIsMoving = EMovementDirection::Left;
+		bIsMoving = EMovingDirection::Left;
 	}
-	else if (bIsMoving == EMovementDirection::Left)
+	else if (bIsMoving == EMovingDirection::Left)
 	{
-		bIsMoving = EMovementDirection::None;
+		bIsMoving = EMovingDirection::None;
 	}
 }
 
@@ -86,10 +86,10 @@ void APaperPlayer::MoveRight(bool const bPressed)
 {
 	if (bPressed)
 	{
-		bIsMoving = EMovementDirection::Right;
+		bIsMoving = EMovingDirection::Right;
 	}
-	else if (bIsMoving == EMovementDirection::Right)
+	else if (bIsMoving == EMovingDirection::Right)
 	{
-		bIsMoving = EMovementDirection::None;
+		bIsMoving = EMovingDirection::None;
 	}
 }

@@ -19,8 +19,8 @@ APaperPawn::APaperPawn(FObjectInitializer const & ObjectInitializer)
 	, MaximumJumpDuration(.2f)
 	, bDrawDebugSweeps(false)
 	, bDrawDebugHits(false)
-	, bIsAerial(EAerialMovement::None) // TODO maybe should be Falling on start (is bStartPenetrating a problem?)
-	, bIsMoving(EMovementDirection::None)
+	, bIsAerial(EAerialState::None) // TODO maybe should be Falling on start (is bStartPenetrating a problem?)
+	, bIsMoving(EMovingDirection::None)
 	, JumpDuration(0.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -41,7 +41,7 @@ void APaperPawn::BeginPlay()
 	Super::BeginPlay();
 
 	LevelCollisionObjectParams.AddObjectTypesToQuery(ECC_Level);
-	LevelCollisionShape.SetSphere(CollisionComponent->GetUnscaledCapsuleRadius());
+	LevelCollisionShape.SetSphere(CollisionComponent->GetUnscaledCapsuleRadius() - .1f); // Small offset so collisions against walls aren't detected
 	LevelCollisionParams.AddIgnoredActor(this);
 	LevelCollisionDelegate.BindUObject(this, &APaperPawn::LevelCollisionHandler);
 }
@@ -53,47 +53,44 @@ void APaperPawn::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	const auto Input = GetInputVector();
-	const auto LinearVelocityZ = CollisionComponent->GetPhysicsLinearVelocity().Z;
+	const auto VelocityZ = CollisionComponent->GetPhysicsLinearVelocity().Z;
 
-	// Input.Y is the kickstarter for a jump
-	if (!FMath::IsNearlyZero(Input.Y) && CanJump())
+	// Detect jumps
+	if (FMath::IsNearlyEqual(Input.Y, 1.f) && CanJump())
 	{
-		bIsAerial = EAerialMovement::Jumping;
-	}
-	else if (IsJumping() && !CanJump())
-	{
-		bIsAerial = EAerialMovement::Falling;
-	}
-	else if (IsFalling() && CanJump())
-	{
-		bIsAerial = EAerialMovement::None;
+		bIsAerial = EAerialState::Jumping;
 	}
 
-	if (IsJumping())
+	if (IsJumping() && CanJump())
 	{
 		JumpDuration += DeltaTime;
 	}
-	else if (IsFalling())
+	else
 	{
 		QueryLevelCollision();
 	}
 
-	CollisionComponent->SetPhysicsLinearVelocity(FVector(Input.X * MovementMultiplier, 0.f, IsJumping() ? Input.Y * JumpMultiplier : LinearVelocityZ));
+	CollisionComponent->SetPhysicsLinearVelocity(FVector(Input.X * MovementMultiplier, 0.f, IsJumping() ? Input.Y * JumpMultiplier : VelocityZ));
 }
 
 bool APaperPawn::IsJumping() const
 {
-	return bIsAerial == EAerialMovement::Jumping;
+	return bIsAerial == EAerialState::Jumping;
 }
 
 bool APaperPawn::IsFalling() const
 {
-	return bIsAerial == EAerialMovement::Falling;
+	return bIsAerial == EAerialState::Falling;
+}
+
+bool APaperPawn::IsMoving() const
+{
+	return bIsMoving;
 }
 
 bool APaperPawn::CanJump() const
 {
-	return IsFalling() ? FMath::IsNearlyZero(JumpDuration) : JumpDuration <= MaximumJumpDuration;
+	return !IsFalling() && JumpDuration <= MaximumJumpDuration;
 }
 
 FVector2D APaperPawn::GetInputVector() const
@@ -120,24 +117,26 @@ void APaperPawn::QueryLevelCollision()
 void APaperPawn::LevelCollisionHandler(FTraceHandle const & TraceHandle, FTraceDatum & TraceDatum)
 {
 	const bool bValidHit = TraceDatum.OutHits.Num();
-	
+
+	bIsAerial = !bValidHit ? EAerialState::Falling : EAerialState::None;
+
 	if (bValidHit)
 	{
 		JumpDuration = 0.f;
 	}
 
+	UWorld * World = GetWorld();
+
 	if (bDrawDebugSweeps)
 	{
-		UWorld * World = GetWorld();
+		DrawDebugSphere(World, TraceDatum.End, LevelCollisionShape.GetSphereRadius(), 16, bValidHit ? FColor::Red : FColor::Yellow, false, .5f, 0, .5f);
+	}
 
-		DrawDebugSphere(World, TraceDatum.End, CollisionComponent->GetUnscaledCapsuleRadius(), 16, bValidHit ? FColor::Red : FColor::Yellow, false, .5f, 0, .1f);
+	if (bDrawDebugHits && bValidHit)
+	{
+		const auto ImpactPoint = TraceDatum.OutHits.Last().ImpactPoint;
 
-		if (bDrawDebugHits && bValidHit)
-		{ 
-			const auto ImpactPoint = TraceDatum.OutHits.Last().ImpactPoint;
-			
-			DrawDebugLine(World, ImpactPoint + FVector::ForwardVector * 5.f, ImpactPoint - FVector::ForwardVector * 5.f, FColor::Red, false, 1.f, 0, 1.f);
-			DrawDebugLine(World, ImpactPoint + FVector::RightVector * 5.f, ImpactPoint - FVector::RightVector * 5.f, FColor::Red, false, 1.f, 0, 1.f);
-		}
+		DrawDebugLine(World, ImpactPoint + FVector::ForwardVector * 5.f, ImpactPoint - FVector::ForwardVector * 5.f, FColor::Red, false, 1.f, 0, 1.f);
+		DrawDebugLine(World, ImpactPoint + FVector::RightVector * 5.f, ImpactPoint - FVector::RightVector * 5.f, FColor::Red, false, 1.f, 0, 1.f);
 	}
 }
