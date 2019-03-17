@@ -9,6 +9,8 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogPaperPawn, Log, All)
 
+DECLARE_STATS_GROUP(TEXT("PaperPawn"), STATGROUP_PaperPawn, STATCAT_Advanced)
+
 UCLASS()
 class MIRRORMENOT_API APaperPawn : public APawn
 {
@@ -31,18 +33,22 @@ public:
 
 	bool IsMoving() const;
 
-	bool CanJump() const;
+	virtual bool CanJump() const;
 
 	virtual FVector2D GetInputVector() const;
 
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStateChangedDelegate, APaperPawn*, InPawn);
+	UPROPERTY(BlueprintAssignable)
+	FOnStateChangedDelegate OnStateChanged;
+
 protected:
-	struct EAerialState
+	struct EVerticalMovement
 	{
 		static const uint8 None = 0b00;
 		static const uint8 Jumping = 0b01;
 		static const uint8 Falling = 0b10;
 	};
-	struct EMovingDirection
+	struct EHorizontalMovement
 	{
 		static const uint8 None = 0b00;
 		static const uint8 Left = 0b01;
@@ -68,9 +74,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Paper Pawn | Debug")
 	uint8 bDrawDebugHits : 1;
 
-	uint8 bIsAerial : 2;
-	uint8 bIsMoving : 2;
-
 private:
 	void QueryLevelCollision();
 	void LevelCollisionHandler(FTraceHandle const & TraceHandle, FTraceDatum & TraceDatum);
@@ -79,6 +82,9 @@ private:
 	FCollisionShape LevelCollisionShape;
 	FCollisionQueryParams LevelCollisionParams;
 	FTraceDelegate LevelCollisionDelegate;
+
+	uint8 bIsAerial : 2;
+	uint8 bIsMoving : 2;
 
 	float JumpDuration;
 };

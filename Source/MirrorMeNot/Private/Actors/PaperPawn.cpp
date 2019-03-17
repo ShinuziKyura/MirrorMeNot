@@ -7,8 +7,11 @@
 #include "Components/CapsuleComponent.h"
 #include "PaperFlipbookComponent.h"
 #include "DrawDebugHelpers.h"
+#include "GameFramework/Controller.h"
 
 DEFINE_LOG_CATEGORY(LogPaperPawn)
+
+DECLARE_CYCLE_STAT(TEXT("PaperPawn_Tick"), STAT_PaperPawn_Tick, STATGROUP_PaperPawn)
 
 APaperPawn::APaperPawn(FObjectInitializer const & ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -19,8 +22,8 @@ APaperPawn::APaperPawn(FObjectInitializer const & ObjectInitializer)
 	, MaximumJumpDuration(.2f)
 	, bDrawDebugSweeps(false)
 	, bDrawDebugHits(false)
-	, bIsAerial(EAerialState::None) // TODO maybe should be Falling on start (is bStartPenetrating a problem?)
-	, bIsMoving(EMovingDirection::None)
+	, bIsAerial(EVerticalMovement::None)
+	, bIsMoving(EHorizontalMovement::None)
 	, JumpDuration(0.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -48,20 +51,25 @@ void APaperPawn::BeginPlay()
 
 void APaperPawn::Tick(float DeltaTime)
 {
-	// TODO add cycle counter
+	SCOPE_CYCLE_COUNTER(STAT_PaperPawn_Tick)
 
 	Super::Tick(DeltaTime);
 
-	const auto Input = GetInputVector();
-	const auto VelocityZ = CollisionComponent->GetPhysicsLinearVelocity().Z;
+	auto const Input = GetInputVector();
+	auto const VelocityZ = CollisionComponent->GetPhysicsLinearVelocity().Z;
 
-	// Detect jumps
-	if (FMath::IsNearlyEqual(Input.Y, 1.f) && CanJump())
+	// Change state machine
+
+	if (CanJump())
 	{
-		bIsAerial = EAerialState::Jumping;
+		bIsAerial = FMath::IsNearlyZero(Input.Y) ? EVerticalMovement::None : EVerticalMovement::Jumping;
+	}
+	else
+	{
+		bIsAerial = EVerticalMovement::Falling;
 	}
 
-	if (IsJumping() && CanJump())
+	if (IsJumping())
 	{
 		JumpDuration += DeltaTime;
 	}
@@ -70,17 +78,40 @@ void APaperPawn::Tick(float DeltaTime)
 		QueryLevelCollision();
 	}
 
+	switch (int32(FMath::Sign(Input.X)))
+	{
+	case -1:
+		bIsMoving = EHorizontalMovement::Left;
+		break;
+	case 1:
+		bIsMoving = EHorizontalMovement::Right;
+		break;
+	case 0:
+	default:
+		bIsMoving = EHorizontalMovement::None;
+		break;
+	}
+
+	OnStateChanged.Broadcast(this);
+
+	// Change components
+
+	if (IsMoving())
+	{
+		FlipbookComponent->SetWorldRotation(FRotator(0.f, FMath::IsNegativeFloat(Input.X) ? 180.f : 0.f, 0.f));
+	}
+
 	CollisionComponent->SetPhysicsLinearVelocity(FVector(Input.X * MovementMultiplier, 0.f, IsJumping() ? Input.Y * JumpMultiplier : VelocityZ));
 }
 
 bool APaperPawn::IsJumping() const
 {
-	return bIsAerial == EAerialState::Jumping;
+	return bIsAerial == EVerticalMovement::Jumping;
 }
 
 bool APaperPawn::IsFalling() const
 {
-	return bIsAerial == EAerialState::Falling;
+	return bIsAerial == EVerticalMovement::Falling;
 }
 
 bool APaperPawn::IsMoving() const
@@ -90,7 +121,7 @@ bool APaperPawn::IsMoving() const
 
 bool APaperPawn::CanJump() const
 {
-	return !IsFalling() && JumpDuration <= MaximumJumpDuration;
+	return JumpDuration < MaximumJumpDuration;
 }
 
 FVector2D APaperPawn::GetInputVector() const
@@ -100,8 +131,8 @@ FVector2D APaperPawn::GetInputVector() const
 
 void APaperPawn::QueryLevelCollision()
 {
-	const auto Point = CollisionComponent->GetComponentLocation() - FVector::UpVector * (CollisionComponent->GetUnscaledCapsuleHalfHeight() - CollisionComponent->GetUnscaledCapsuleRadius());
-	const auto Direction = Point - FVector::UpVector;
+	auto const Point = CollisionComponent->GetComponentLocation() - FVector::UpVector * (CollisionComponent->GetUnscaledCapsuleHalfHeight() - CollisionComponent->GetUnscaledCapsuleRadius());
+	auto const Direction = Point - FVector::UpVector;
 
 	GetWorld()->AsyncSweepByObjectType(
 		EAsyncTraceType::Single, 
@@ -116,16 +147,11 @@ void APaperPawn::QueryLevelCollision()
 
 void APaperPawn::LevelCollisionHandler(FTraceHandle const & TraceHandle, FTraceDatum & TraceDatum)
 {
-	const bool bValidHit = TraceDatum.OutHits.Num();
+	UWorld * const World = GetWorld();
 
-	bIsAerial = !bValidHit ? EAerialState::Falling : EAerialState::None;
+	bool const bValidHit = TraceDatum.OutHits.Num();
 
-	if (bValidHit)
-	{
-		JumpDuration = 0.f;
-	}
-
-	UWorld * World = GetWorld();
+	JumpDuration = bValidHit ? 0.f : MaximumJumpDuration;
 
 	if (bDrawDebugSweeps)
 	{
@@ -134,7 +160,7 @@ void APaperPawn::LevelCollisionHandler(FTraceHandle const & TraceHandle, FTraceD
 
 	if (bDrawDebugHits && bValidHit)
 	{
-		const auto ImpactPoint = TraceDatum.OutHits.Last().ImpactPoint;
+		auto const ImpactPoint = TraceDatum.OutHits.Last().ImpactPoint;
 
 		DrawDebugLine(World, ImpactPoint + FVector::ForwardVector * 5.f, ImpactPoint - FVector::ForwardVector * 5.f, FColor::Red, false, 1.f, 0, 1.f);
 		DrawDebugLine(World, ImpactPoint + FVector::RightVector * 5.f, ImpactPoint - FVector::RightVector * 5.f, FColor::Red, false, 1.f, 0, 1.f);

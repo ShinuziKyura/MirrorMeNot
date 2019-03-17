@@ -23,10 +23,23 @@ public:
 
 /// APaperPawn interface
 
+	virtual bool CanJump() const override;
+
 	virtual FVector2D GetInputVector() const override;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Enemy", meta = (ExposeFunctionCategories = "Components|Movement, Components|Movement|Planar, AI|Components|NavMovement"))
 	class UPaperNavMovementComponent* MovementComponent;
+
+/*	UFUNCTION(BlueprintCallable, Category = "Paper Enemy | Behaviour")
+	void QueryActorVisibility(); // TODO decide if asynchronous
+	void ActorVisibilityHandler(FTraceHandle const & TraceHandle, FTraceDatum & TraceDatum);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Paper Enemy | Behaviour")
+	void OnActorVisible(); */
+
+	FCollisionObjectQueryParams ActorVisibilityObjectParams;
+	FCollisionQueryParams ActorVisibilityParams;
+	FTraceDelegate ActorVisibilityDelegate;
 
 };

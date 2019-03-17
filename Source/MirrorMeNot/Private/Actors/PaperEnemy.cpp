@@ -16,6 +16,11 @@ UPawnMovementComponent* APaperEnemy::GetMovementComponent() const
 	return MovementComponent;
 }
 
+bool APaperEnemy::CanJump() const
+{
+	return false;
+}
+
 FVector2D APaperEnemy::GetInputVector() const
 {
 	return MovementComponent->GetInputVector();

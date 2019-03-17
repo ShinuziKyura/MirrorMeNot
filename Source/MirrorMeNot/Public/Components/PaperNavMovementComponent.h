@@ -25,27 +25,7 @@ public:
 
 /// UNavMovementComponent interface
 
-	virtual bool CanStartPathFollowing() const override;
-
-	virtual bool CanStopPathFollowing() const override;
-
-	//virtual FBasedPosition GetActorFeetLocationBased() const override;
-
-	virtual float GetPathFollowingBrakingDistance(float MaxSpeed) const override;
-
-	virtual bool IsCrouching() const override;
-
-	virtual bool IsFalling() const override;
-
-	virtual bool IsFlying() const override;
-
-	virtual bool IsMovingOnGround() const override;
-
-	virtual bool IsSwimming() const override;
-
 	virtual void RequestDirectMove(const FVector& MoveVelocity, bool bForceMaxSpeed) override;
-
-	virtual void RequestPathMove(const FVector& MoveInput) override;
 
 	virtual void StopActiveMovement() override;
 

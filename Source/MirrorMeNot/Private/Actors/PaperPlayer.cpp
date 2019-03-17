@@ -11,74 +11,30 @@ void APaperPlayer::SetupPlayerInputComponent(UInputComponent * PlayerInputCompon
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	BindAction(PlayerInputComponent, TEXT("Up"), this, &APaperPlayer::JumpUp);
+	BindAction(PlayerInputComponent, TEXT("Up"), this, &APaperPlayer::Jump);
 	BindAction(PlayerInputComponent, TEXT("Left"), this, &APaperPlayer::MoveLeft);
 	BindAction(PlayerInputComponent, TEXT("Right"), this, &APaperPlayer::MoveRight);
 }
 
 FVector2D APaperPlayer::GetInputVector() const
 {
-	auto Input = FVector2D::ZeroVector;
-	
-	switch (bIsMoving)
-	{
-		case EMovingDirection::Left:
-			Input.X = -1.f;
-			break;
-		case EMovingDirection::Right:
-			Input.X = 1.f;
-			break;
-		case EMovingDirection::None:
-		default:
-			break;
-	}
-	switch (bIsAerial)
-	{
-		case EAerialState::Jumping:
-			Input.Y = 1.f;
-			break;
-		case EAerialState::Falling:
-		case EAerialState::None:
-		default:
-			break;
-	}
-
-	return Input;
+	return InputVector;
 }
 
-void APaperPlayer::JumpUp(bool const bPressed)
+void APaperPlayer::Jump(bool const bPressed)
 {
-	if (bPressed)
-	{
-		if (bIsAerial == EAerialState::None)
-		{
-			bIsAerial = EAerialState::Jumping;
-		}
-	}
-	else if (bIsAerial == EAerialState::Jumping)
-	{
-		bIsAerial = EAerialState::Falling;
-	}
-}
-
-void APaperPlayer::FallDown(bool const bPressed)
-{
-	// TODO behaviour to fall through
-	if (bPressed)
-	{
-		bIsAerial = EAerialState::Falling;
-	}
+	InputVector.Y = bPressed ? 1.f : 0.f;
 }
 
 void APaperPlayer::MoveLeft(bool const bPressed)
 {
 	if (bPressed)
 	{
-		bIsMoving = EMovingDirection::Left;
+		InputVector.X = -1.f;
 	}
-	else if (bIsMoving == EMovingDirection::Left)
+	else if (InputVector.X == -1.f)
 	{
-		bIsMoving = EMovingDirection::None;
+		InputVector.X = 0.f;
 	}
 }
 
@@ -86,10 +42,10 @@ void APaperPlayer::MoveRight(bool const bPressed)
 {
 	if (bPressed)
 	{
-		bIsMoving = EMovingDirection::Right;
+		InputVector.X = 1.f;
 	}
-	else if (bIsMoving == EMovingDirection::Right)
+	else if (InputVector.X == 1.f)
 	{
-		bIsMoving = EMovingDirection::None;
+		InputVector.X = 0.f;
 	}
 }

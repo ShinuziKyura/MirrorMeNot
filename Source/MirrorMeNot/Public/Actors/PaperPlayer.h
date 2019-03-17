@@ -26,13 +26,13 @@ public:
 	virtual FVector2D GetInputVector() const override;
 
 private:
-	void JumpUp(bool const bPressed);
-
-	void FallDown(bool const bPressed);
+	void Jump(bool const bPressed);
 
 	void MoveLeft(bool const bPressed);
 
 	void MoveRight(bool const bPressed);
+
+	FVector2D InputVector;
 
 	// Utility method to setup inputs // TODO RS maybe extract this to utility library
 	template <class UserClass>
