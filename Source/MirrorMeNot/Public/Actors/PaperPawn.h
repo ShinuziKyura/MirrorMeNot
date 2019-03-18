@@ -55,6 +55,8 @@ protected:
 		static const uint8 Right = 0b10;
 	};
 
+	virtual void SetOrientation(float const InOrientation);
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Pawn")
 	class UCapsuleComponent* CollisionComponent;
 

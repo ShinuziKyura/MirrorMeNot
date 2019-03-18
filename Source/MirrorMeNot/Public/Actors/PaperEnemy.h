@@ -17,29 +17,25 @@ class MIRRORMENOT_API APaperEnemy : public APaperPawn
 public:
 	APaperEnemy(FObjectInitializer const& ObjectInitializer);
 
-/// APawn interface
-
-	virtual UPawnMovementComponent* GetMovementComponent() const override;
-
 /// APaperPawn interface
-
-	virtual bool CanJump() const override;
 
 	virtual FVector2D GetInputVector() const override;
 
+	UFUNCTION(BlueprintCallable, Category = "Paper Enemy | Navigation")
+	virtual void SetInputVector(FVector const & Destination);
+
+	UFUNCTION(BlueprintCallable, Category = "Paper Enemy | Navigation")
+	virtual void ResetInputVector();
+
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Enemy", meta = (ExposeFunctionCategories = "Components|Movement, Components|Movement|Planar, AI|Components|NavMovement"))
-	class UPaperNavMovementComponent* MovementComponent;
+	virtual void SetOrientation(float const InOrientation) override;
 
-/*	UFUNCTION(BlueprintCallable, Category = "Paper Enemy | Behaviour")
-	void QueryActorVisibility(); // TODO decide if asynchronous
-	void ActorVisibilityHandler(FTraceHandle const & TraceHandle, FTraceDatum & TraceDatum);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Enemy | Navigation")
+	float StopThreshold;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Enemy | Navigation")
+	float JumpThreshold;
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "Paper Enemy | Behaviour")
-	void OnActorVisible(); */
-
-	FCollisionObjectQueryParams ActorVisibilityObjectParams;
-	FCollisionQueryParams ActorVisibilityParams;
-	FTraceDelegate ActorVisibilityDelegate;
+private:
+	FVector2D InputVector;
 
 };
