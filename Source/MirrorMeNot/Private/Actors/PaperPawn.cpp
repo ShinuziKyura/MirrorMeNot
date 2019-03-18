@@ -62,7 +62,7 @@ void APaperPawn::Tick(float DeltaTime)
 
 	if (CanJump())
 	{
-		bIsAerial = FMath::IsNearlyEqual(Input.Y, 1.f) ? EVerticalMovement::None : EVerticalMovement::Jumping;
+		bIsAerial = FMath::IsNearlyEqual(Input.Y, 1.f) ? EVerticalMovement::Jumping : EVerticalMovement::None;
 	}
 	else
 	{
