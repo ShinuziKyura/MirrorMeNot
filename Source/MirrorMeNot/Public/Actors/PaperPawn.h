@@ -27,10 +27,13 @@ public:
 
 /// APaperPawn interface
 
+	UFUNCTION(BlueprintPure, Category = "Paper Pawn | Movement")
 	bool IsJumping() const;
 
+	UFUNCTION(BlueprintPure, Category = "Paper Pawn | Movement")
 	bool IsFalling() const;
 
+	UFUNCTION(BlueprintPure, Category = "Paper Pawn | Movement")
 	bool IsMoving() const;
 
 	virtual bool CanJump() const;
