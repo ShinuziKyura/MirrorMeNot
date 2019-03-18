@@ -15,6 +15,8 @@ UPaperNavMovementComponent::UPaperNavMovementComponent(FObjectInitializer const&
 void UPaperNavMovementComponent::RequestDirectMove(const FVector& MoveVelocity, bool bForceMaxSpeed)
 {
 	InputVector = FVector2D(FMath::Sign(MoveVelocity.X), 0.f); // TODO This needs to be adjusted if we make enemies capable of jumping
+
+	UE_LOG(LogPaperNavMovementComponent, Log, TEXT("RequestDirectMove: %s"), *MoveVelocity.ToString());
 }
 
 void UPaperNavMovementComponent::StopActiveMovement()
