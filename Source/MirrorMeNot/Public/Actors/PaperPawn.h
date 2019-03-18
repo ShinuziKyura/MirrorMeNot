@@ -41,6 +41,8 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnStateChangedDelegate OnStateChanged;
 
+	virtual void SetOrientation(float const InOrientation);
+
 protected:
 	struct EVerticalMovement
 	{
@@ -54,8 +56,6 @@ protected:
 		static const uint8 Left = 0b01;
 		static const uint8 Right = 0b10;
 	};
-
-	virtual void SetOrientation(float const InOrientation);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Pawn")
 	class UCapsuleComponent* CollisionComponent;

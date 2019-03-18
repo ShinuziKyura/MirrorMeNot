@@ -27,9 +27,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Paper Enemy | Navigation")
 	virtual void ResetInputVector();
 
-protected:
+	UFUNCTION(BlueprintCallable, Category = "Paper Enemy | Navigation")
 	virtual void SetOrientation(float const InOrientation) override;
-
+protected:
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Enemy | Navigation")
 	float StopThreshold;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Enemy | Navigation")
