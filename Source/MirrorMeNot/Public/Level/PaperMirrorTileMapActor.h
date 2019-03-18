@@ -19,6 +19,9 @@ public:
 
 	virtual void BeginPlay() override;
 
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	UFUNCTION(BlueprintCallable)
 	void SwapLayers();
 
 private:
@@ -26,4 +29,5 @@ private:
 	TArray<class UPaperTileLayer*> ReverseTileLayers;
 
 	bool bIsReversed;
+
 };
