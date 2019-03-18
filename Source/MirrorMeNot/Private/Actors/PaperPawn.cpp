@@ -32,7 +32,7 @@ APaperPawn::APaperPawn(FObjectInitializer const & ObjectInitializer)
 
 	CollisionComponent->SetSimulatePhysics(true);
 	CollisionComponent->SetNotifyRigidBodyCollision(true);
-	CollisionComponent->SetCollisionProfileName(UCustomCollisionProfile::PaperActor_ProfileName);
+	CollisionComponent->SetCollisionProfileName(UCustomCollisionProfile::PaperPlayer_ProfileName);
 
 	FlipbookComponent->SetupAttachment(CollisionComponent);
 	FlipbookComponent->SetGenerateOverlapEvents(false);

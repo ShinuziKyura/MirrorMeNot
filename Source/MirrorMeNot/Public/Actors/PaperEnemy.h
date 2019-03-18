@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Actors/PaperPawn.h"
+#include "EntityActor.h"
 #include "PaperEnemy.generated.h"
 
 /**
@@ -16,6 +17,8 @@ class MIRRORMENOT_API APaperEnemy : public APaperPawn
 
 public:
 	APaperEnemy(FObjectInitializer const& ObjectInitializer);
+
+	virtual void BeginPlay() override;
 
 /// APaperPawn interface
 
@@ -36,6 +39,9 @@ protected:
 	float JumpThreshold;
 
 private:
+	UPROPERTY()
+	AEntityActor * DamageActor;
+
 	FVector2D InputVector;
 
 };

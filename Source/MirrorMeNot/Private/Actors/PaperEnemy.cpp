@@ -8,8 +8,21 @@ APaperEnemy::APaperEnemy(FObjectInitializer const& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, StopThreshold(64.f)
 	, JumpThreshold(128.f)
+	, DamageActor(nullptr)
 	, InputVector(FVector2D::ZeroVector)
 {
+}
+
+void APaperEnemy::BeginPlay()
+{
+	Super::BeginPlay();
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	DamageActor = GetWorld()->SpawnActor<AEntityActor>(AEntityActor::StaticClass(), GetActorTransform(), SpawnParams);
+//	DamageActor->Deactivate();
 }
 
 FVector2D APaperEnemy::GetInputVector() const
