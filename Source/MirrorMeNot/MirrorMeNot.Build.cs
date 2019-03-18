@@ -14,7 +14,10 @@ public class MirrorMeNot : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "InputCore",
-                "Paper2D"
+                "Paper2D",
+                "RHI",
+                "RenderCore",
+                "ShaderCore"
             }
         );
         

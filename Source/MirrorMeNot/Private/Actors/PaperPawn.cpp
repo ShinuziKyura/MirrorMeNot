@@ -20,11 +20,11 @@ APaperPawn::APaperPawn(FObjectInitializer const & ObjectInitializer)
 	, MovementMultiplier(450.f)
 	, JumpMultiplier(450.f)
 	, MaximumJumpDuration(.2f)
+	, JumpDuration(0.f)
 	, bDrawDebugSweeps(false)
 	, bDrawDebugHits(false)
 	, bIsAerial(EVerticalMovement::None)
 	, bIsMoving(EHorizontalMovement::None)
-	, JumpDuration(0.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -62,7 +62,7 @@ void APaperPawn::Tick(float DeltaTime)
 
 	if (CanJump())
 	{
-		bIsAerial = FMath::IsNearlyZero(Input.Y) ? EVerticalMovement::None : EVerticalMovement::Jumping;
+		bIsAerial = FMath::IsNearlyEqual(Input.Y, 1.f) ? EVerticalMovement::Jumping : EVerticalMovement::None;
 	}
 	else
 	{
