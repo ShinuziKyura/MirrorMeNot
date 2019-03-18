@@ -17,7 +17,13 @@ FVector2D APaperEnemy::GetInputVector() const
 	return InputVector;
 }
 
-void APaperEnemy::SetInputVector(FVector const & Destination)
+void APaperEnemy::SetInputVector(FVector2D const & NewInputVector)
+{
+	InputVector = NewInputVector;
+	SetOrientation(InputVector.X);
+}
+
+void APaperEnemy::CalculateInputVector(FVector const & Destination)
 {
 	FVector const Distance = Destination - GetActorLocation();
 
