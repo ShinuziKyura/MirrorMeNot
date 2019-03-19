@@ -44,7 +44,7 @@ void APaperPawn::BeginPlay()
 	Super::BeginPlay();
 
 	LevelCollisionObjectParams.AddObjectTypesToQuery(ECC_Level);
-	LevelCollisionShape.SetSphere(CollisionComponent->GetUnscaledCapsuleRadius() - .1f); // Small offset so collisions against walls aren't detected
+	LevelCollisionShape.SetSphere(CollisionComponent->GetUnscaledCapsuleRadius() / 2.f); // Offset so collisions against walls aren't detected
 	LevelCollisionParams.AddIgnoredActor(this);
 	LevelCollisionDelegate.BindUObject(this, &APaperPawn::LevelCollisionHandler);
 }
@@ -131,8 +131,8 @@ void APaperPawn::SetOrientation(float const InOrientation)
 
 void APaperPawn::QueryLevelCollision()
 {
-	auto const Point = CollisionComponent->GetComponentLocation() - FVector::UpVector * (CollisionComponent->GetUnscaledCapsuleHalfHeight() - CollisionComponent->GetUnscaledCapsuleRadius());
-	auto const Direction = Point - FVector::UpVector;
+	auto const Point = CollisionComponent->GetComponentLocation() - FVector::UpVector * CollisionComponent->GetUnscaledCapsuleHalfHeight_WithoutHemisphere();
+	auto const Direction = Point - FVector::UpVector * CollisionComponent->GetUnscaledCapsuleRadius();
 
 	GetWorld()->AsyncSweepByObjectType(
 		EAsyncTraceType::Single, 
