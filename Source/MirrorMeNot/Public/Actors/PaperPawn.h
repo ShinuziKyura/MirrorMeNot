@@ -27,10 +27,13 @@ public:
 
 /// APaperPawn interface
 
+	UFUNCTION(BlueprintPure, Category = "Paper Pawn | Movement")
 	bool IsJumping() const;
 
+	UFUNCTION(BlueprintPure, Category = "Paper Pawn | Movement")
 	bool IsFalling() const;
 
+	UFUNCTION(BlueprintPure, Category = "Paper Pawn | Movement")
 	bool IsMoving() const;
 
 	virtual bool CanJump() const;
@@ -54,6 +57,8 @@ protected:
 		static const uint8 Left = 0b01;
 		static const uint8 Right = 0b10;
 	};
+
+	virtual void SetOrientation(float const InOrientation);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Pawn")
 	class UCapsuleComponent* CollisionComponent;

@@ -96,11 +96,6 @@ void APaperPawn::Tick(float DeltaTime)
 
 	// Change components
 
-	if (IsMoving())
-	{
-		FlipbookComponent->SetWorldRotation(FRotator(0.f, FMath::IsNegativeFloat(Input.X) ? 180.f : 0.f, 0.f));
-	}
-
 	CollisionComponent->SetPhysicsLinearVelocity(FVector(Input.X * MovementMultiplier, 0.f, IsJumping() ? Input.Y * JumpMultiplier : VelocityZ));
 }
 
@@ -127,6 +122,11 @@ bool APaperPawn::CanJump() const
 FVector2D APaperPawn::GetInputVector() const
 {
 	return FVector2D::ZeroVector;
+}
+
+void APaperPawn::SetOrientation(float const InOrientation)
+{
+	FlipbookComponent->SetWorldRotation(FRotator(0.f, FMath::IsNegativeFloat(InOrientation) ? 180.f : 0.f, 0.f));
 }
 
 void APaperPawn::QueryLevelCollision()

@@ -4,6 +4,7 @@
 
 APaperPlayer::APaperPlayer(FObjectInitializer const & ObjectInitializer)
 	: Super(ObjectInitializer)
+	, InputVector(FVector2D::ZeroVector)
 {
 }
 
@@ -31,6 +32,8 @@ void APaperPlayer::MoveLeft(bool const bPressed)
 	if (bPressed)
 	{
 		InputVector.X = -1.f;
+
+		SetOrientation(InputVector.X);
 	}
 	else if (InputVector.X == -1.f)
 	{
@@ -43,6 +46,8 @@ void APaperPlayer::MoveRight(bool const bPressed)
 	if (bPressed)
 	{
 		InputVector.X = 1.f;
+
+		SetOrientation(InputVector.X);
 	}
 	else if (InputVector.X == 1.f)
 	{
