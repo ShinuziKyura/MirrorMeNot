@@ -28,7 +28,10 @@ public:
 /// APaperEnemy interface
 
 	UFUNCTION(BlueprintCallable, Category = "Paper Enemy | Navigation")
-	virtual void SetInputVector(FVector const & Destination);
+	void SetInputVector(FVector2D const & NewInputVector);
+
+	UFUNCTION(BlueprintCallable, Category = "Paper Enemy | Navigation")
+	virtual void CalculateInputVector(FVector const & Destination);
 
 	UFUNCTION(BlueprintCallable, Category = "Paper Enemy | Navigation")
 	virtual void ResetInputVector();
@@ -40,7 +43,6 @@ protected:
 	float StopThreshold;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Enemy | Navigation")
 	float JumpThreshold;
-
 private:
 	UPROPERTY()
 	class APaperEntity * DamageActor;
