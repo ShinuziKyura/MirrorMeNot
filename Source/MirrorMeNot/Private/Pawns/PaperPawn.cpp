@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Actors/PaperPawn.h"
+#include "Pawns/PaperPawn.h"
 #include "Engine/CollisionProfile.h"
 #include "Engine/CustomCollisionProfile.h"
 #include "Engine/CustomEngineTypes.h"

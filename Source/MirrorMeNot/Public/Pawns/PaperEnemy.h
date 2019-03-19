@@ -3,8 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Actors/PaperPawn.h"
-#include "EntityActor.h"
+#include "Pawns/PaperPawn.h"
 #include "PaperEnemy.generated.h"
 
 /**
@@ -18,11 +17,15 @@ class MIRRORMENOT_API APaperEnemy : public APaperPawn
 public:
 	APaperEnemy(FObjectInitializer const& ObjectInitializer);
 
+/// AActor interface
+
 	virtual void BeginPlay() override;
 
 /// APaperPawn interface
 
 	virtual FVector2D GetInputVector() const override;
+
+/// APaperEnemy interface
 
 	UFUNCTION(BlueprintCallable, Category = "Paper Enemy | Navigation")
 	virtual void SetInputVector(FVector const & Destination);
@@ -40,7 +43,7 @@ protected:
 
 private:
 	UPROPERTY()
-	AEntityActor * DamageActor;
+	class APaperEntity * DamageActor;
 
 	FVector2D InputVector;
 

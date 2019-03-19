@@ -3,6 +3,7 @@
 #include "PaperEnemy.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Controller.h"
+#include "Actors/PaperEntity.h"
 
 APaperEnemy::APaperEnemy(FObjectInitializer const& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -18,11 +19,10 @@ void APaperEnemy::BeginPlay()
 	Super::BeginPlay();
 
 	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	DamageActor = GetWorld()->SpawnActor<AEntityActor>(AEntityActor::StaticClass(), GetActorTransform(), SpawnParams);
-//	DamageActor->Deactivate();
+	DamageActor = GetWorld()->SpawnActor<APaperEntity>(APaperEntity::StaticClass(), GetActorTransform(), SpawnParams);
+//	DamageActor->Activate(EEntityType::Damage, 1.f, FVector(32.f, 32.f, 32.f)); // Example usage
 }
 
 FVector2D APaperEnemy::GetInputVector() const
