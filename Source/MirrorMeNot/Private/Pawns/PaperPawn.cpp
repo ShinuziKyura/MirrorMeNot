@@ -1,13 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Actors/PaperPawn.h"
+#include "Pawns/PaperPawn.h"
 #include "Engine/CollisionProfile.h"
 #include "Engine/CustomCollisionProfile.h"
 #include "Engine/CustomEngineTypes.h"
 #include "Components/CapsuleComponent.h"
 #include "PaperFlipbookComponent.h"
-#include "DrawDebugHelpers.h"
 #include "GameFramework/Controller.h"
+#include "DrawDebugHelpers.h"
 
 DEFINE_LOG_CATEGORY(LogPaperPawn)
 
@@ -32,7 +32,7 @@ APaperPawn::APaperPawn(FObjectInitializer const & ObjectInitializer)
 
 	CollisionComponent->SetSimulatePhysics(true);
 	CollisionComponent->SetNotifyRigidBodyCollision(true);
-	CollisionComponent->SetCollisionProfileName(UCustomCollisionProfile::PaperActor_ProfileName);
+	CollisionComponent->SetCollisionProfileName(UCustomCollisionProfile::PaperPlayer_ProfileName);
 
 	FlipbookComponent->SetupAttachment(CollisionComponent);
 	FlipbookComponent->SetGenerateOverlapEvents(false);
@@ -44,7 +44,7 @@ void APaperPawn::BeginPlay()
 	Super::BeginPlay();
 
 	LevelCollisionObjectParams.AddObjectTypesToQuery(ECC_Level);
-	LevelCollisionShape.SetSphere(CollisionComponent->GetUnscaledCapsuleRadius() - .1f); // Small offset so collisions against walls aren't detected
+	LevelCollisionShape.SetSphere(CollisionComponent->GetUnscaledCapsuleRadius() / 2.f); // Offset so collisions against walls aren't detected
 	LevelCollisionParams.AddIgnoredActor(this);
 	LevelCollisionDelegate.BindUObject(this, &APaperPawn::LevelCollisionHandler);
 }
@@ -131,8 +131,8 @@ void APaperPawn::SetOrientation(float const InOrientation)
 
 void APaperPawn::QueryLevelCollision()
 {
-	auto const Point = CollisionComponent->GetComponentLocation() - FVector::UpVector * (CollisionComponent->GetUnscaledCapsuleHalfHeight() - CollisionComponent->GetUnscaledCapsuleRadius());
-	auto const Direction = Point - FVector::UpVector;
+	auto const Point = CollisionComponent->GetComponentLocation() - FVector::UpVector * CollisionComponent->GetUnscaledCapsuleHalfHeight_WithoutHemisphere();
+	auto const Direction = Point - FVector::UpVector * CollisionComponent->GetUnscaledCapsuleRadius();
 
 	GetWorld()->AsyncSweepByObjectType(
 		EAsyncTraceType::Single, 
