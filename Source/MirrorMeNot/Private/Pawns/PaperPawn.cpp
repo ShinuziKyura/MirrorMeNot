@@ -4,6 +4,7 @@
 #include "Engine/CollisionProfile.h"
 #include "Engine/CustomCollisionProfile.h"
 #include "Engine/CustomEngineTypes.h"
+#include "Components/PhysicsComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "PaperFlipbookComponent.h"
 #include "GameFramework/Controller.h"
@@ -15,6 +16,7 @@ DECLARE_CYCLE_STAT(TEXT("PaperPawn_Tick"), STAT_PaperPawn_Tick, STATGROUP_PaperP
 
 APaperPawn::APaperPawn(FObjectInitializer const & ObjectInitializer)
 	: Super(ObjectInitializer)
+//	, PhysicsComponent(ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, TEXT("PhysicsComponent")))
 	, CollisionComponent(ObjectInitializer.CreateDefaultSubobject<UCapsuleComponent>(this, TEXT("CapsuleComponent")))
 	, FlipbookComponent(ObjectInitializer.CreateDefaultSubobject<UPaperFlipbookComponent>(this, TEXT("PaperFlipbookComponent")))
 	, MovementMultiplier(450.f)
@@ -23,6 +25,7 @@ APaperPawn::APaperPawn(FObjectInitializer const & ObjectInitializer)
 	, JumpDuration(0.f)
 	, bDrawDebugSweeps(false)
 	, bDrawDebugHits(false)
+	, bIsBipedal(true)
 	, bIsAerial(EVerticalMovement::None)
 	, bIsMoving(EHorizontalMovement::None)
 {
@@ -30,6 +33,7 @@ APaperPawn::APaperPawn(FObjectInitializer const & ObjectInitializer)
 
 	SetRootComponent(CollisionComponent);
 
+//	CollisionComponent->SetupAttachment(PhysicsComponent);
 	CollisionComponent->SetSimulatePhysics(true);
 	CollisionComponent->SetNotifyRigidBodyCollision(true);
 	CollisionComponent->SetCollisionProfileName(UCustomCollisionProfile::PaperPlayer_ProfileName);
@@ -42,9 +46,18 @@ APaperPawn::APaperPawn(FObjectInitializer const & ObjectInitializer)
 void APaperPawn::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	if (!bIsBipedal)
+	{
+		CollisionComponent->SetWorldRotation(FRotator(90.f, 0.f, 0.f));
+		FlipbookComponent->SetWorldRotation(FRotator(0.f, 0.f, 0.f));
+	}
+
+	auto const CapsuleRadius = CollisionComponent->GetUnscaledCapsuleRadius() - (bIsBipedal ? 2.f : 0.f); // Offset so collisions against walls aren't detected
+	auto const CapsuleHalfHeight = CollisionComponent->GetScaledCapsuleHalfHeight() - (bIsBipedal ? 0.f : 2.f);
 
 	LevelCollisionObjectParams.AddObjectTypesToQuery(ECC_Level);
-	LevelCollisionShape.SetSphere(CollisionComponent->GetUnscaledCapsuleRadius() / 2.f); // Offset so collisions against walls aren't detected
+	LevelCollisionShape.SetCapsule(CapsuleRadius, CapsuleHalfHeight);
 	LevelCollisionParams.AddIgnoredActor(this);
 	LevelCollisionDelegate.BindUObject(this, &APaperPawn::LevelCollisionHandler);
 }
@@ -131,8 +144,8 @@ void APaperPawn::SetOrientation(float const InOrientation)
 
 void APaperPawn::QueryLevelCollision()
 {
-	auto const Point = CollisionComponent->GetComponentLocation() - FVector::UpVector * CollisionComponent->GetUnscaledCapsuleHalfHeight_WithoutHemisphere();
-	auto const Direction = Point - FVector::UpVector * CollisionComponent->GetUnscaledCapsuleRadius();
+	auto const Point = CollisionComponent->GetComponentLocation()/* - FVector::UpVector * (bIsBipedal ? CollisionComponent->GetUnscaledCapsuleHalfHeight_WithoutHemisphere() : CollisionComponent->GetUnscaledCapsuleRadius() / 2.f)*/;
+	auto const Direction = Point - FVector::UpVector;
 
 	GetWorld()->AsyncSweepByObjectType(
 		EAsyncTraceType::Single, 
@@ -155,7 +168,7 @@ void APaperPawn::LevelCollisionHandler(FTraceHandle const & TraceHandle, FTraceD
 
 	if (bDrawDebugSweeps)
 	{
-		DrawDebugSphere(World, TraceDatum.End, LevelCollisionShape.GetSphereRadius(), 16, bValidHit ? FColor::Red : FColor::Yellow, false, .5f, 0, .5f);
+		DrawDebugCapsule(World, TraceDatum.End, LevelCollisionShape.GetCapsuleHalfHeight(), LevelCollisionShape.GetCapsuleRadius(), FQuat(FRotator(bIsBipedal ? 0.f : 90.f, 0.f, 0.f)), bValidHit ? FColor::Red : FColor::Yellow, false, .5f, 0, .5f);
 	}
 
 	if (bDrawDebugHits && bValidHit)
