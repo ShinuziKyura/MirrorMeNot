@@ -57,7 +57,7 @@ void APaperPawn::Tick(float DeltaTime)
 	auto const Input = GetInputVector();
 	auto const VelocityZ = PhysicsComponent->GetPhysicsLinearVelocity().Z;
 
-	// Change state machine
+	// Update state machine
 
 	if (CanJump())
 	{
@@ -66,15 +66,6 @@ void APaperPawn::Tick(float DeltaTime)
 	else
 	{
 		bIsAerial = EVerticalMovement::Falling;
-	}
-
-	if (IsJumping())
-	{
-		JumpDuration += DeltaTime;
-	}
-	else
-	{
-		QueryLevelCollision();
 	}
 
 	switch (int32(FMath::Sign(Input.X)))
@@ -91,11 +82,29 @@ void APaperPawn::Tick(float DeltaTime)
 		break;
 	}
 
-	OnStateChanged.Broadcast(this);
+	OnStateUpdated.Broadcast(this);
 
-	// Change components
+	// Query level for collision
+
+	if (IsJumping())
+	{
+		JumpDuration += DeltaTime;
+	}
+	else
+	{
+		QueryLevelCollision();
+	}
+
+	// Apply input to components
+
+	SetOrientation(int32(FMath::Sign(Input.X)));
 
 	PhysicsComponent->SetPhysicsLinearVelocity(FVector(Input.X * MovementMultiplier, 0.f, IsJumping() ? Input.Y * JumpMultiplier : VelocityZ));
+}
+
+FVector2D APaperPawn::GetInputVector() const
+{
+	return FVector2D::ZeroVector;
 }
 
 bool APaperPawn::IsJumping() const
@@ -118,14 +127,12 @@ bool APaperPawn::CanJump() const
 	return JumpDuration < MaximumJumpDuration;
 }
 
-FVector2D APaperPawn::GetInputVector() const
+void APaperPawn::SetOrientation(int32 const InOrientation)
 {
-	return FVector2D::ZeroVector;
-}
-
-void APaperPawn::SetOrientation(float const InOrientation)
-{
-	FlipbookComponent->SetWorldRotation(FRotator(0.f, FMath::IsNegativeFloat(InOrientation) ? 180.f : 0.f, 0.f));
+	if (InOrientation)
+	{
+		FlipbookComponent->SetWorldRotation(FRotator(0.f, InOrientation == -1 ? 180.f : 0.f, 0.f));
+	}
 }
 
 void APaperPawn::QueryLevelCollision()
@@ -154,6 +161,6 @@ void APaperPawn::LevelCollisionHandler(FTraceHandle const & TraceHandle, FTraceD
 
 	if (bDrawDebugSweeps)
 	{
-		DrawDebugBox(World, TraceDatum.Start, LevelCollisionShape.GetBox(), bValidHit ? FColor::Red : FColor::Yellow, false, .5f, 0, .5f);
+		DrawDebugBox(World, TraceDatum.End, LevelCollisionShape.GetBox(), bValidHit ? FColor::Red : FColor::Yellow, false, .5f, 0, .5f);
 	}
 }

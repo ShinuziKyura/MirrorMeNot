@@ -3,6 +3,7 @@
 #include "PaperEnemy.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/Controller.h"
+#include "PaperFlipbookComponent.h"
 
 APaperEnemy::APaperEnemy(FObjectInitializer const& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -22,15 +23,11 @@ FVector2D APaperEnemy::GetInputVector() const
 void APaperEnemy::SetInputVector(FVector2D const & NewInputVector)
 {
 	InputVector = NewInputVector;
-
-	SetOrientation(InputVector.X);
 }
 
 void APaperEnemy::CalculateInputVector(FVector const & Destination)
 {
 	FVector const Distance = Destination - GetActorLocation();
-
-	SetOrientation(Distance.X);
 
 	if (FMath::Abs(Distance.X) < StopThreshold) 
 	{
@@ -60,9 +57,21 @@ void APaperEnemy::ResetInputVector()
 	InputVector = FVector2D::ZeroVector;
 }
 
-void APaperEnemy::SetOrientation(float const InOrientation)
+bool APaperEnemy::IsWalking() const
+{
+	return IsMoving() && FMath::IsNearlyEqual(InputVector.Size(), .1f);
+}
+
+void APaperEnemy::SetOrientation(int32 const InOrientation)
 {
 	Super::SetOrientation(InOrientation);
 
-	Controller->SetControlRotation(FRotator(0.f, FMath::IsNegativeFloat(InOrientation) ? 180.f : 0.f, 0.f));
+	if (InOrientation)
+	{
+		// TODO convert this to a BlueprintNativeEvent and do this in blueprints
+		FlipbookComponent->SetRelativeLocation(FVector(InOrientation * -10.f, 0.f, 30.f));
+		DamageComponent->SetRelativeLocation(FVector(InOrientation * 20.f, 0.f, 0.f));
+
+		Controller->SetControlRotation(FRotator(0.f, InOrientation == -1 ? 180.f : 0.f, 0.f));
+	}
 }

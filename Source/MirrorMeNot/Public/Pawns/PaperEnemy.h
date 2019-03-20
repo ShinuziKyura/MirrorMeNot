@@ -32,8 +32,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Paper Enemy | Navigation")
 	virtual void ResetInputVector();
 
+	UFUNCTION(BlueprintPure, Category = "Paper Pawn | Movement")
+	bool IsWalking() const;
+
 protected:
-	virtual void SetOrientation(float const InOrientation) override;
+	virtual void SetOrientation(int32 const InOrientation) override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Enemy | Interaction")
 	class UChildActorComponent* DamageComponent;
