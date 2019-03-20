@@ -7,14 +7,17 @@
 template <class>
 struct TCustomCollisionProfile
 {
-	static const FName PaperActor_ProfileName;
+	static const FName PaperPlayer_ProfileName;
+	static const FName PaperEnemy_ProfileName;
 	static const FName PaperIntangibleActor_ProfileName;
 	static const FName PaperEntity_ProfileName;
 	static const FName PaperLevel_ProfileName;
 };
 
 template <class Type>
-const FName TCustomCollisionProfile<Type>::PaperActor_ProfileName{ TEXT("PaperActor") };
+const FName TCustomCollisionProfile<Type>::PaperPlayer_ProfileName{ TEXT("PaperPlayer") };
+template <class Type>
+const FName TCustomCollisionProfile<Type>::PaperEnemy_ProfileName{ TEXT("PaperEnemy") };
 template <class Type>
 const FName TCustomCollisionProfile<Type>::PaperIntangibleActor_ProfileName{ TEXT("PaperIntangibleActor") };
 template <class Type>
