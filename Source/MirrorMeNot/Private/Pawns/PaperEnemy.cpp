@@ -3,13 +3,26 @@
 #include "PaperEnemy.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Controller.h"
+#include "Actors/PaperEntity.h"
 
 APaperEnemy::APaperEnemy(FObjectInitializer const& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, StopThreshold(64.f)
 	, JumpThreshold(128.f)
+	, DamageActor(nullptr)
 	, InputVector(FVector2D::ZeroVector)
 {
+}
+
+void APaperEnemy::BeginPlay()
+{
+	Super::BeginPlay();
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	DamageActor = GetWorld()->SpawnActor<APaperEntity>(APaperEntity::StaticClass(), GetActorTransform(), SpawnParams);
+//	DamageActor->Activate(EEntityType::Damage, 1.f, FVector(32.f, 32.f, 32.f)); // Example usage
 }
 
 FVector2D APaperEnemy::GetInputVector() const
@@ -17,7 +30,13 @@ FVector2D APaperEnemy::GetInputVector() const
 	return InputVector;
 }
 
-void APaperEnemy::SetInputVector(FVector const & Destination)
+void APaperEnemy::SetInputVector(FVector2D const & NewInputVector)
+{
+	InputVector = NewInputVector;
+	SetOrientation(InputVector.X);
+}
+
+void APaperEnemy::CalculateInputVector(FVector const & Destination)
 {
 	FVector const Distance = Destination - GetActorLocation();
 
