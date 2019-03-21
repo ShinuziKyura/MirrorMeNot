@@ -118,6 +118,8 @@ void APaperPlayer::OnEntityOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 		}
 		break;
 	case EEntityType::Collectable:
+		Entity->SetState(false);
+
 		OnCollectableFound.Broadcast(Entity);
 		break;
 	default:
