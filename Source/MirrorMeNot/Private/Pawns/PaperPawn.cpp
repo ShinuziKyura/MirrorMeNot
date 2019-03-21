@@ -1,13 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Actors/PaperPawn.h"
+#include "Pawns/PaperPawn.h"
 #include "Engine/CollisionProfile.h"
 #include "Engine/CustomCollisionProfile.h"
 #include "Engine/CustomEngineTypes.h"
 #include "Components/CapsuleComponent.h"
 #include "PaperFlipbookComponent.h"
-#include "DrawDebugHelpers.h"
 #include "GameFramework/Controller.h"
+#include "DrawDebugHelpers.h"
 
 DEFINE_LOG_CATEGORY(LogPaperPawn)
 
@@ -32,7 +32,7 @@ APaperPawn::APaperPawn(FObjectInitializer const & ObjectInitializer)
 
 	CollisionComponent->SetSimulatePhysics(true);
 	CollisionComponent->SetNotifyRigidBodyCollision(true);
-	CollisionComponent->SetCollisionProfileName(UCustomCollisionProfile::PaperActor_ProfileName);
+	CollisionComponent->SetCollisionProfileName(UCustomCollisionProfile::PaperPlayer_ProfileName);
 
 	FlipbookComponent->SetupAttachment(CollisionComponent);
 	FlipbookComponent->SetGenerateOverlapEvents(false);
