@@ -74,8 +74,6 @@ void APaperPlayer::MoveLeft(bool const bPressed)
 	if (bPressed)
 	{
 		InputVector.X = -1.f;
-
-		SetOrientation(InputVector.X);
 	}
 	else if (InputVector.X == -1.f)
 	{
@@ -88,8 +86,6 @@ void APaperPlayer::MoveRight(bool const bPressed)
 	if (bPressed)
 	{
 		InputVector.X = 1.f;
-
-		SetOrientation(InputVector.X);
 	}
 	else if (InputVector.X == 1.f)
 	{
@@ -119,7 +115,6 @@ void APaperPlayer::OnEntityOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 		break;
 	case EEntityType::Collectable:
 		Entity->SetState(false);
-
 		OnCollectableFound.Broadcast(Entity);
 		break;
 	default:
