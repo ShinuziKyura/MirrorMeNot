@@ -131,7 +131,7 @@ void APaperPawn::SetOrientation(float const InOrientation)
 void APaperPawn::QueryLevelCollision()
 {
 	auto const Point = PhysicsComponent->GetComponentLocation();
-	auto const Direction = Point - FVector::UpVector;
+	auto const Direction = Point - FVector::UpVector * 4.f;
 
 	GetWorld()->AsyncSweepByObjectType(
 		EAsyncTraceType::Single, 

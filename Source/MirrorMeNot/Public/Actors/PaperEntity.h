@@ -22,37 +22,35 @@ class MIRRORMENOT_API APaperEntity : public AActor
 public:	
 	APaperEntity(FObjectInitializer const & ObjectInitializer);
 
-/// APaperEntity interface // TODO check which of these methods should be exposed to BPs
+/// APaperEntity interface
 
-	void Activate(EEntityType InType, float InValue, FVector InBoxExtent);
-
-	void Activate(FVector InBoxExtent = FVector::ZeroVector);
-
-	void Deactivate();
-
-	class UPaperSpriteComponent * GetSprite() const;
-
-	class UPaperFlipbookComponent * GetFlipbook() const;
-
+	UFUNCTION(BlueprintPure, Category = "Paper Entity")
 	EEntityType GetType() const;
 
+	UFUNCTION(BlueprintPure, Category = "Paper Entity")
 	float GetValue() const;
 
-private:
-	//TODO possibly add a trajectory/path for it to follow, plus lifetime functionality
+	UFUNCTION(BlueprintPure, Category = "Paper Entity")
+	bool GetState() const;
 
-	UPROPERTY(VisibleAnywhere, Category = "Paper Entity")
-	class UBoxComponent * BoxComponent;
+	UFUNCTION(BlueprintCallable, Category = "Paper Entity")
+	void SetState(bool const bEnabled);
 
-	UPROPERTY(VisibleAnywhere, Category = "Paper Entity")
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Entity")
+	class UBoxComponent * OverlapComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Entity")
+	class USplineComponent * PathComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Entity")
 	class UPaperSpriteComponent * SpriteComponent;
 
-	UPROPERTY(VisibleAnywhere, Category = "Paper Entity")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Entity")
 	class UPaperFlipbookComponent * FlipbookComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Paper Entity", meta = (AllowPrivateAccess = "true"))
 	EEntityType Type;
-
 	// General-purpose value
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Paper Entity", meta = (AllowPrivateAccess = "true"))
 	float Value;
