@@ -62,16 +62,12 @@ bool APaperEnemy::IsWalking() const
 	return IsMoving() && FMath::IsNearlyEqual(InputVector.Size(), .1f);
 }
 
-void APaperEnemy::SetOrientation(int32 const InOrientation)
+void APaperEnemy::SetOrientation_Implementation(int32 const InOrientation)
 {
-	Super::SetOrientation(InOrientation);
+	Super::SetOrientation_Implementation(InOrientation);
 
 	if (InOrientation)
 	{
-		// TODO convert this to a BlueprintNativeEvent and do this in blueprints
-		FlipbookComponent->SetRelativeLocation(FVector(InOrientation * -10.f, 0.f, 30.f));
-		DamageComponent->SetRelativeLocation(FVector(InOrientation * 20.f, 0.f, 0.f));
-
 		Controller->SetControlRotation(FRotator(0.f, InOrientation == -1 ? 180.f : 0.f, 0.f));
 	}
 }

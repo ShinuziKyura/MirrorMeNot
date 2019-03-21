@@ -127,7 +127,7 @@ bool APaperPawn::CanJump() const
 	return JumpDuration < MaximumJumpDuration;
 }
 
-void APaperPawn::SetOrientation(int32 const InOrientation)
+void APaperPawn::SetOrientation_Implementation(int32 const InOrientation)
 {
 	if (InOrientation)
 	{

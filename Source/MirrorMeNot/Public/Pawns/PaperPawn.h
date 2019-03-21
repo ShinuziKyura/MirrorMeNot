@@ -60,8 +60,11 @@ protected:
 		static const uint8 Right = 0b10;
 	};
 
-	// Sets orientation for relevant components, may be overridden so derived classes' components can be adjusted as well
-	virtual void SetOrientation(int32 const InOrientation);
+	// Sets orientation for relevant components, SetOrientation_Implementation may be overridden so derived classes' components can be adjusted as well
+	UFUNCTION(BlueprintNativeEvent, Category = "Paper Pawn")
+	void SetOrientation(int32 const InOrientation);
+	
+	virtual void SetOrientation_Implementation(int32 const InOrientation);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Pawn")
 	class UBoxComponent* PhysicsComponent;

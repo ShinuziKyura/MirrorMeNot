@@ -36,7 +36,7 @@ public:
 	bool IsWalking() const;
 
 protected:
-	virtual void SetOrientation(int32 const InOrientation) override;
+	virtual void SetOrientation_Implementation(int32 const InOrientation) override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Enemy | Interaction")
 	class UChildActorComponent* DamageComponent;
