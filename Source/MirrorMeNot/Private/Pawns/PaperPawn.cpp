@@ -4,7 +4,7 @@
 #include "Engine/CollisionProfile.h"
 #include "Engine/CustomCollisionProfile.h"
 #include "Engine/CustomEngineTypes.h"
-#include "Components/CapsuleComponent.h"
+#include "Components/BoxComponent.h"
 #include "PaperFlipbookComponent.h"
 #include "GameFramework/Controller.h"
 #include "DrawDebugHelpers.h"
@@ -15,26 +15,25 @@ DECLARE_CYCLE_STAT(TEXT("PaperPawn_Tick"), STAT_PaperPawn_Tick, STATGROUP_PaperP
 
 APaperPawn::APaperPawn(FObjectInitializer const & ObjectInitializer)
 	: Super(ObjectInitializer)
-	, CollisionComponent(ObjectInitializer.CreateDefaultSubobject<UCapsuleComponent>(this, TEXT("CapsuleComponent")))
+	, PhysicsComponent(ObjectInitializer.CreateDefaultSubobject<UBoxComponent>(this, TEXT("BoxComponent")))
 	, FlipbookComponent(ObjectInitializer.CreateDefaultSubobject<UPaperFlipbookComponent>(this, TEXT("PaperFlipbookComponent")))
 	, MovementMultiplier(450.f)
 	, JumpMultiplier(450.f)
 	, MaximumJumpDuration(.2f)
 	, JumpDuration(0.f)
 	, bDrawDebugSweeps(false)
-	, bDrawDebugHits(false)
 	, bIsAerial(EVerticalMovement::None)
 	, bIsMoving(EHorizontalMovement::None)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	SetRootComponent(CollisionComponent);
+	SetRootComponent(PhysicsComponent);
+	
+	PhysicsComponent->SetSimulatePhysics(true);
+	PhysicsComponent->SetNotifyRigidBodyCollision(true);
+	PhysicsComponent->SetCollisionProfileName(UCustomCollisionProfile::PaperPlayer_ProfileName);
 
-	CollisionComponent->SetSimulatePhysics(true);
-	CollisionComponent->SetNotifyRigidBodyCollision(true);
-	CollisionComponent->SetCollisionProfileName(UCustomCollisionProfile::PaperPlayer_ProfileName);
-
-	FlipbookComponent->SetupAttachment(CollisionComponent);
+	FlipbookComponent->SetupAttachment(PhysicsComponent);
 	FlipbookComponent->SetGenerateOverlapEvents(false);
 	FlipbookComponent->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 }
@@ -44,7 +43,7 @@ void APaperPawn::BeginPlay()
 	Super::BeginPlay();
 
 	LevelCollisionObjectParams.AddObjectTypesToQuery(ECC_Level);
-	LevelCollisionShape.SetSphere(CollisionComponent->GetUnscaledCapsuleRadius() / 2.f); // Offset so collisions against walls aren't detected
+	LevelCollisionShape.SetBox(PhysicsComponent->GetUnscaledBoxExtent() - FVector::ForwardVector * 4.f);
 	LevelCollisionParams.AddIgnoredActor(this);
 	LevelCollisionDelegate.BindUObject(this, &APaperPawn::LevelCollisionHandler);
 }
@@ -56,7 +55,7 @@ void APaperPawn::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	auto const Input = GetInputVector();
-	auto const VelocityZ = CollisionComponent->GetPhysicsLinearVelocity().Z;
+	auto const VelocityZ = PhysicsComponent->GetPhysicsLinearVelocity().Z;
 
 	// Change state machine
 
@@ -96,7 +95,7 @@ void APaperPawn::Tick(float DeltaTime)
 
 	// Change components
 
-	CollisionComponent->SetPhysicsLinearVelocity(FVector(Input.X * MovementMultiplier, 0.f, IsJumping() ? Input.Y * JumpMultiplier : VelocityZ));
+	PhysicsComponent->SetPhysicsLinearVelocity(FVector(Input.X * MovementMultiplier, 0.f, IsJumping() ? Input.Y * JumpMultiplier : VelocityZ));
 }
 
 bool APaperPawn::IsJumping() const
@@ -131,8 +130,8 @@ void APaperPawn::SetOrientation(float const InOrientation)
 
 void APaperPawn::QueryLevelCollision()
 {
-	auto const Point = CollisionComponent->GetComponentLocation() - FVector::UpVector * CollisionComponent->GetUnscaledCapsuleHalfHeight_WithoutHemisphere();
-	auto const Direction = Point - FVector::UpVector * CollisionComponent->GetUnscaledCapsuleRadius();
+	auto const Point = PhysicsComponent->GetComponentLocation();
+	auto const Direction = Point - FVector::UpVector * 4.f;
 
 	GetWorld()->AsyncSweepByObjectType(
 		EAsyncTraceType::Single, 
@@ -155,14 +154,6 @@ void APaperPawn::LevelCollisionHandler(FTraceHandle const & TraceHandle, FTraceD
 
 	if (bDrawDebugSweeps)
 	{
-		DrawDebugSphere(World, TraceDatum.End, LevelCollisionShape.GetSphereRadius(), 16, bValidHit ? FColor::Red : FColor::Yellow, false, .5f, 0, .5f);
-	}
-
-	if (bDrawDebugHits && bValidHit)
-	{
-		auto const ImpactPoint = TraceDatum.OutHits.Last().ImpactPoint;
-
-		DrawDebugLine(World, ImpactPoint + FVector::ForwardVector * 5.f, ImpactPoint - FVector::ForwardVector * 5.f, FColor::Red, false, 1.f, 0, 1.f);
-		DrawDebugLine(World, ImpactPoint + FVector::RightVector * 5.f, ImpactPoint - FVector::RightVector * 5.f, FColor::Red, false, 1.f, 0, 1.f);
+		DrawDebugBox(World, TraceDatum.Start, LevelCollisionShape.GetBox(), bValidHit ? FColor::Red : FColor::Yellow, false, .5f, 0, .5f);
 	}
 }
