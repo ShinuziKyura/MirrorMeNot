@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Pawns/PaperPlayer.h"
-#include "Components/CapsuleComponent.h"
+#include "Components/BoxComponent.h"
 #include "Actors/PaperEntity.h"
 #include "Components/InputComponent.h"
 #include "MirrorMeNotGameInstance.h"
@@ -18,7 +18,7 @@ void APaperPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-	CollisionComponent->OnComponentBeginOverlap.AddDynamic(this, &APaperPlayer::OnEntityOverlap);
+	PhysicsComponent->OnComponentBeginOverlap.AddDynamic(this, &APaperPlayer::OnEntityOverlap);
 }
 
 void APaperPlayer::Tick(float DeltaTime)

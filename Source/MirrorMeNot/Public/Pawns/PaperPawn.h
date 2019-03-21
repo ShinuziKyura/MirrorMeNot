@@ -60,13 +60,9 @@ protected:
 
 	virtual void SetOrientation(float const InOrientation);
 
-	// Do not use this component directly for physics!
-//	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Pawn")
-//	class USceneComponent* PhysicsComponent;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Pawn")
-	class UCapsuleComponent* CollisionComponent;
-
+	class UBoxComponent* PhysicsComponent;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Pawn")
 	class UPaperFlipbookComponent* FlipbookComponent;
 
@@ -90,11 +86,6 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Paper Pawn | Debug", meta = (AllowPrivateAccess = "true"))
 	uint8 bDrawDebugSweeps : 1;
-	UPROPERTY(EditAnywhere, Category = "Paper Pawn | Debug", meta = (AllowPrivateAccess = "true"))
-	uint8 bDrawDebugHits : 1;
-
-	UPROPERTY(EditAnywhere, Category = "Paper Pawn | Characteristics", meta = (AllowPrivateAccess = "true"))
-	uint8 bIsBipedal : 1;
 
 	uint8 bIsAerial : 2;
 	uint8 bIsMoving : 2;
