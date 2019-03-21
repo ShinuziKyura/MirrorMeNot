@@ -17,10 +17,6 @@ class MIRRORMENOT_API APaperEnemy : public APaperPawn
 public:
 	APaperEnemy(FObjectInitializer const& ObjectInitializer);
 
-/// AActor interface
-
-	virtual void BeginPlay() override;
-
 /// APaperPawn interface
 
 	virtual FVector2D GetInputVector() const override;
@@ -36,17 +32,21 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Paper Enemy | Navigation")
 	virtual void ResetInputVector();
 
+	UFUNCTION(BlueprintPure, Category = "Paper Pawn | Movement")
+	bool IsWalking() const;
+
 protected:
-	virtual void SetOrientation(float const InOrientation) override;
+	virtual void SetOrientation_Implementation(int32 const InOrientation) override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Enemy | Interaction")
+	class UChildActorComponent* DamageComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Enemy | Navigation")
 	float StopThreshold;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Paper Enemy | Navigation")
 	float JumpThreshold;
-private:
-	UPROPERTY()
-	class APaperEntity * DamageActor;
 
+private:
 	FVector2D InputVector;
 
 };

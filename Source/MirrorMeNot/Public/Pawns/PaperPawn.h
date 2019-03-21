@@ -27,6 +27,9 @@ public:
 
 /// APaperPawn interface
 
+	// Gets vector with input information for each tick, should be overridden and provided with appropriate implementations
+	virtual FVector2D GetInputVector() const;
+
 	UFUNCTION(BlueprintPure, Category = "Paper Pawn | Movement")
 	bool IsJumping() const;
 
@@ -36,13 +39,12 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Paper Pawn | Movement")
 	bool IsMoving() const;
 
+	// Queries whether this pawn is currently able to jump, may be overridden to impose different (stronger or weaker) constraints
 	virtual bool CanJump() const;
 
-	virtual FVector2D GetInputVector() const;
-
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStateChangedDelegate, APaperPawn*, InPawn);
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStateUpdatedDelegate, APaperPawn*, InPawn);
 	UPROPERTY(BlueprintAssignable)
-	FOnStateChangedDelegate OnStateChanged;
+	FOnStateUpdatedDelegate OnStateUpdated;
 
 protected:
 	struct EVerticalMovement
@@ -58,11 +60,15 @@ protected:
 		static const uint8 Right = 0b10;
 	};
 
-	virtual void SetOrientation(float const InOrientation);
+	// Sets orientation for relevant components, SetOrientation_Implementation may be overridden so derived classes' components can be adjusted as well
+	UFUNCTION(BlueprintNativeEvent, Category = "Paper Pawn")
+	void SetOrientation(int32 const InOrientation);
+	
+	virtual void SetOrientation_Implementation(int32 const InOrientation);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Pawn")
-	class UCapsuleComponent* CollisionComponent;
-
+	class UBoxComponent* PhysicsComponent;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Paper Pawn")
 	class UPaperFlipbookComponent* FlipbookComponent;
 
@@ -86,8 +92,6 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Paper Pawn | Debug", meta = (AllowPrivateAccess = "true"))
 	uint8 bDrawDebugSweeps : 1;
-	UPROPERTY(EditAnywhere, Category = "Paper Pawn | Debug", meta = (AllowPrivateAccess = "true"))
-	uint8 bDrawDebugHits : 1;
 
 	uint8 bIsAerial : 2;
 	uint8 bIsMoving : 2;
