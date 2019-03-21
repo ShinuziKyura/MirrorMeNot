@@ -23,4 +23,5 @@ public:
 		PlayerInputComponent->BindAction<TBaseDelegate<void, bool const>>(ActionName, IE_Pressed, Object, Func, true);
 		PlayerInputComponent->BindAction<TBaseDelegate<void, bool const>>(ActionName, IE_Released, Object, Func, false);
 	}
+
 };

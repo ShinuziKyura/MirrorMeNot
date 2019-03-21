@@ -61,13 +61,13 @@ void APaperMirrorTileMapActor::BeginPlay()
 
 void APaperMirrorTileMapActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	if (bIsReversed)
+	if (bIsReversed) // TODO fix this, not working correctly on editor
 	{
-		SwapLayers();
+		ShiftLayers();
 	}
 }
 
-void APaperMirrorTileMapActor::SwapLayers()
+void APaperMirrorTileMapActor::ShiftLayers()
 {
 	auto const TileMap = GetRenderComponent()->TileMap;
 
