@@ -11,12 +11,27 @@ AMirrorMeNotGameModeBase::AMirrorMeNotGameModeBase(FObjectInitializer const& Obj
 {
 }
 
+void AMirrorMeNotGameModeBase::BeginPlay()
+{
+	Super::BeginPlay();
+
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APaperMirrorTileMapActor::StaticClass(), CachedTileMapActors);
+}
+
+void AMirrorMeNotGameModeBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (bIsReversed)
+	{
+		bCanShiftWorlds = true;
+		ShiftWorlds();
+		bCanShiftWorlds = false;
+	}
+}
+
 void AMirrorMeNotGameModeBase::ShiftWorlds()
 {
 	if (bCanShiftWorlds)
 	{
-		CacheTileMaps();
-
 		for (auto const Actor : CachedTileMapActors)
 		{
 			if (auto const TileMapActor = Cast<APaperMirrorTileMapActor>(Actor))
@@ -35,12 +50,3 @@ void AMirrorMeNotGameModeBase::SetCanShiftWorlds(bool const bEnabled)
 {
 	bCanShiftWorlds = bEnabled;
 }
-
-void AMirrorMeNotGameModeBase::CacheTileMaps()
-{
-	if (!CachedTileMapActors.Num())
-	{
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), APaperMirrorTileMapActor::StaticClass(), CachedTileMapActors);
-	}
-}
-

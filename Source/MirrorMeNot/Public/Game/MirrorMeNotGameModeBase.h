@@ -17,6 +17,10 @@ class MIRRORMENOT_API AMirrorMeNotGameModeBase : public AGameModeBase
 public:
 	AMirrorMeNotGameModeBase(FObjectInitializer const& ObjectInitializer);
 
+	virtual void BeginPlay() override;
+	
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
 	void ShiftWorlds();
 
 	UFUNCTION(BlueprintCallable)
