@@ -2,6 +2,7 @@
 
 #include "Actors/PaperEntity.h"
 #include "Components/BoxComponent.h"
+#include "Components/SplineComponent.h"
 #include "PaperSpriteComponent.h"
 #include "PaperFlipbookComponent.h"
 #include "Engine/CollisionProfile.h"
@@ -9,7 +10,8 @@
 
 APaperEntity::APaperEntity(FObjectInitializer const & ObjectInitializer)
 	: Super(ObjectInitializer)
-	, BoxComponent(ObjectInitializer.CreateDefaultSubobject<UBoxComponent>(this, TEXT("BoxComponent")))
+	, OverlapComponent(ObjectInitializer.CreateDefaultSubobject<UBoxComponent>(this, TEXT("BoxComponent")))
+	, PathComponent(ObjectInitializer.CreateDefaultSubobject<USplineComponent>(this, TEXT("SplineComponent")))
 	, SpriteComponent(ObjectInitializer.CreateDefaultSubobject<UPaperSpriteComponent>(this, TEXT("PaperSpriteComponent")))
 	, FlipbookComponent(ObjectInitializer.CreateDefaultSubobject<UPaperFlipbookComponent>(this, TEXT("PaperFlipbookComponent")))
 	, Type(EEntityType::None)
@@ -17,65 +19,19 @@ APaperEntity::APaperEntity(FObjectInitializer const & ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	SetRootComponent(BoxComponent);
+	SetRootComponent(OverlapComponent);
+	
+	OverlapComponent->SetGenerateOverlapEvents(false);
+	OverlapComponent->SetCollisionProfileName(UCustomCollisionProfile::PaperEntity_ProfileName);
 
-	BoxComponent->SetSimulatePhysics(true);
-	BoxComponent->SetEnableGravity(false);
-	BoxComponent->SetCollisionProfileName(UCustomCollisionProfile::PaperEntity_ProfileName);
-	BoxComponent->SetAutoActivate(false);
+	PathComponent->SetupAttachment(OverlapComponent);
+	PathComponent->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
 
-	SpriteComponent->SetupAttachment(BoxComponent);
+	SpriteComponent->SetupAttachment(OverlapComponent);
 	SpriteComponent->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
-	SpriteComponent->SetAutoActivate(false);
 
-	FlipbookComponent->SetupAttachment(BoxComponent);
+	FlipbookComponent->SetupAttachment(OverlapComponent);
 	FlipbookComponent->SetCollisionProfileName(UCollisionProfile::NoCollision_ProfileName);
-	FlipbookComponent->SetAutoActivate(false);
-}
-
-void APaperEntity::Activate(EEntityType InType, float InValue, FVector InBoxExtent)
-{
-	if (!BoxComponent->IsActive())
-	{
-		Type = InType;
-		Value = InValue;
-		BoxComponent->SetBoxExtent(InBoxExtent);
-
-		BoxComponent->Activate(true);
-		SpriteComponent->Activate(true);
-		FlipbookComponent->Activate(true);
-	}
-}
-
-void APaperEntity::Activate(FVector InBoxExtent)
-{
-	ensure(Type != EEntityType::None);
-
-	if (!InBoxExtent.IsNearlyZero())
-	{
-		BoxComponent->SetBoxExtent(InBoxExtent);
-	}
-
-	BoxComponent->Activate(true);
-	SpriteComponent->Activate(true);
-	FlipbookComponent->Activate(true);
-}
-
-void APaperEntity::Deactivate()
-{
-	BoxComponent->Deactivate();
-	SpriteComponent->Deactivate();
-	FlipbookComponent->Deactivate();
-}
-
-UPaperSpriteComponent* APaperEntity::GetSprite() const
-{
-	return SpriteComponent;
-}
-
-UPaperFlipbookComponent* APaperEntity::GetFlipbook() const
-{
-	return FlipbookComponent;
 }
 
 EEntityType APaperEntity::GetType() const
@@ -86,4 +42,14 @@ EEntityType APaperEntity::GetType() const
 float APaperEntity::GetValue() const
 {
 	return Value;
+}
+
+bool APaperEntity::GetState() const
+{
+	return OverlapComponent->GetGenerateOverlapEvents();
+}
+
+void APaperEntity::SetState(bool const bEnabled)
+{
+	OverlapComponent->SetGenerateOverlapEvents(bEnabled);
 }
