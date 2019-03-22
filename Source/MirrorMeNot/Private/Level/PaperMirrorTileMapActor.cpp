@@ -59,15 +59,7 @@ void APaperMirrorTileMapActor::BeginPlay()
 	}
 }
 
-void APaperMirrorTileMapActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	if (bIsReversed)
-	{
-		SwapLayers();
-	}
-}
-
-void APaperMirrorTileMapActor::SwapLayers()
+void APaperMirrorTileMapActor::ShiftLayers()
 {
 	auto const TileMap = GetRenderComponent()->TileMap;
 
