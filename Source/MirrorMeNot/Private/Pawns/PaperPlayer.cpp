@@ -1,10 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Pawns/PaperPlayer.h"
+#include "Kismet/GameplayStatics.h"
 #include "Components/BoxComponent.h"
-#include "Actors/PaperEntity.h"
 #include "Components/InputComponent.h"
 #include "MirrorMeNotGameInstance.h"
+#include "MirrorMeNotGameModeBase.h"
+#include "Actors/PaperEntity.h"
 
 APaperPlayer::APaperPlayer(FObjectInitializer const & ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -38,6 +40,7 @@ void APaperPlayer::SetupPlayerInputComponent(UInputComponent * PlayerInputCompon
 	UMirrorMeNotGameInstance::BindAction(PlayerInputComponent, TEXT("Up"), this, &APaperPlayer::Jump);
 	UMirrorMeNotGameInstance::BindAction(PlayerInputComponent, TEXT("Left"), this, &APaperPlayer::MoveLeft);
 	UMirrorMeNotGameInstance::BindAction(PlayerInputComponent, TEXT("Right"), this, &APaperPlayer::MoveRight);
+	UMirrorMeNotGameInstance::BindAction(PlayerInputComponent, TEXT("Shift"), this, &APaperPlayer::ShiftWorlds);
 }
 
 FVector2D APaperPlayer::GetInputVector() const
@@ -93,31 +96,43 @@ void APaperPlayer::MoveRight(bool const bPressed)
 	}
 }
 
+void APaperPlayer::ShiftWorlds(bool const bPressed)
+{
+	if (bPressed)
+	{
+		if (auto const GameMode = Cast<AMirrorMeNotGameModeBase>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			GameMode->ShiftWorlds();
+		}
+	}
+}
+
 void APaperPlayer::OnEntityOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, FHitResult const& SweepResult)
 {
-	auto const Entity = Cast<APaperEntity>(OtherActor);
-
-	switch (Entity->GetType())
+	if (auto const Entity = Cast<APaperEntity>(OtherActor))
 	{
-	case EEntityType::Damage:
-		if (!IsInvulnerable())
+		switch (Entity->GetType())
 		{
-			if (!FMath::IsNegativeFloat(Health -= Entity->GetValue()))
+		case EEntityType::Damage:
+			if (!IsInvulnerable())
 			{
-				Invulnerable = 3.f;
-				OnDamageReceived.Broadcast();
+				if (!FMath::IsNegativeFloat(Health -= Entity->GetValue()))
+				{
+					Invulnerable = 3.f;
+					OnDamageReceived.Broadcast();
+				}
+				else
+				{
+					OnFatalDamageReceived.Broadcast();
+				}
 			}
-			else
-			{
-				OnFatalDamageReceived.Broadcast();
-			}
+			break;
+		case EEntityType::Collectable:
+			Entity->SetState(false);
+			OnCollectableFound.Broadcast(Entity);
+			break;
+		default:
+			break;
 		}
-		break;
-	case EEntityType::Collectable:
-		Entity->SetState(false);
-		OnCollectableFound.Broadcast(Entity);
-		break;
-	default:
-		break;
 	}
 }

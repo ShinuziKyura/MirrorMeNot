@@ -42,7 +42,7 @@ void APaperEnemy::CalculateInputVector(FVector const & Destination)
 		InputVector.X = 1.f;
 	}
 
-	if (FMath::Abs(Distance.X) < JumpThreshold && Distance.Z > 32.f) // NOTE adjust this value if needed
+	if (FMath::Abs(Distance.X) < JumpThreshold && Distance.Z > 16.f) // NOTE adjust this value if needed
 	{
 		InputVector.Y = 1.f;
 	}
