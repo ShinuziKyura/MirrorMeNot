@@ -7,7 +7,7 @@
 AMirrorMeNotGameModeBase::AMirrorMeNotGameModeBase(FObjectInitializer const& ObjectInitializer)
 	: Super(ObjectInitializer)
 	, bCanShiftWorlds(false)
-	, bIsReversed(false)
+	, bIsShifted(false)
 {
 }
 
@@ -20,12 +20,19 @@ void AMirrorMeNotGameModeBase::BeginPlay()
 
 void AMirrorMeNotGameModeBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	if (bIsReversed)
+	if (bIsShifted)
 	{
 		bCanShiftWorlds = true;
+
 		ShiftWorlds();
+
 		bCanShiftWorlds = false;
 	}
+}
+
+void AMirrorMeNotGameModeBase::SetCanShiftWorlds(bool const bEnabled)
+{
+	bCanShiftWorlds = bEnabled;
 }
 
 void AMirrorMeNotGameModeBase::ShiftWorlds()
@@ -40,13 +47,17 @@ void AMirrorMeNotGameModeBase::ShiftWorlds()
 			}
 		}
 
-		bIsReversed = !bIsReversed;
+		bIsShifted = !bIsShifted;
 
-		OnWorldsShifted.Broadcast(bIsReversed);
+		OnWorldsShifted.Broadcast(bIsShifted);
 	}
 }
 
-void AMirrorMeNotGameModeBase::SetCanShiftWorlds(bool const bEnabled)
+void AMirrorMeNotGameModeBase::PauseGame()
 {
-	bCanShiftWorlds = bEnabled;
+	bIsPaused = !bIsPaused;
+
+	UGameplayStatics::SetGamePaused(GetWorld(), bIsPaused);
+
+	OnGamePaused.Broadcast(bIsPaused);
 }

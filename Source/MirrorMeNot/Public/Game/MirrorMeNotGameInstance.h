@@ -18,9 +18,9 @@ class MIRRORMENOT_API UMirrorMeNotGameInstance : public UGameInstance
 public:
 	// Utility method to setup inputs
 	template <class UserClass>
-	static void BindAction(UInputComponent * PlayerInputComponent, FName const ActionName, UserClass * Object, typename TBaseDelegate<void, bool>::TUObjectMethodDelegate<UserClass>::FMethodPtr Func)
+	static void BindAction(UInputComponent * PlayerInputComponent, FName const ActionName, UserClass * Object, typename TBaseDelegate<void, bool>::TUObjectMethodDelegate<UserClass>::FMethodPtr Func, bool bInExecuteWhenPaused = false)
 	{
-		PlayerInputComponent->BindAction<TBaseDelegate<void, bool const>>(ActionName, IE_Pressed, Object, Func, true);
+		PlayerInputComponent->BindAction<TBaseDelegate<void, bool const>>(ActionName, IE_Pressed, Object, Func, true).bExecuteWhenPaused = bInExecuteWhenPaused;
 		PlayerInputComponent->BindAction<TBaseDelegate<void, bool const>>(ActionName, IE_Released, Object, Func, false);
 	}
 
