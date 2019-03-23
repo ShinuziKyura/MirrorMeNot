@@ -24,6 +24,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetCanShiftWorlds(bool const bEnabled);
 
+	UFUNCTION(BlueprintPure)
+	bool IsWorldShifted() const;
+
+	UFUNCTION(BlueprintCallable)
 	void ShiftWorlds();
 
 	UFUNCTION(BlueprintCallable)

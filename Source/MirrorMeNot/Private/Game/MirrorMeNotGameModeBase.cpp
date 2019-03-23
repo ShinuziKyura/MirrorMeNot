@@ -8,6 +8,7 @@ AMirrorMeNotGameModeBase::AMirrorMeNotGameModeBase(FObjectInitializer const& Obj
 	: Super(ObjectInitializer)
 	, bCanShiftWorlds(false)
 	, bIsShifted(false)
+	, bIsPaused(false)
 {
 }
 
@@ -33,6 +34,11 @@ void AMirrorMeNotGameModeBase::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AMirrorMeNotGameModeBase::SetCanShiftWorlds(bool const bEnabled)
 {
 	bCanShiftWorlds = bEnabled;
+}
+
+bool AMirrorMeNotGameModeBase::IsWorldShifted() const
+{
+	return bIsShifted;
 }
 
 void AMirrorMeNotGameModeBase::ShiftWorlds()
