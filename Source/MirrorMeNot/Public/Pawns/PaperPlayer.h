@@ -60,6 +60,8 @@ private:
 
 	void ShiftWorlds(bool const bPressed);
 
+	void PauseGame(bool const bPressed);
+
 	UFUNCTION()
 	void OnEntityOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, FHitResult const & SweepResult);
 

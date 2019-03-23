@@ -21,21 +21,27 @@ public:
 	
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
+	UFUNCTION(BlueprintCallable)
+	void SetCanShiftWorlds(bool const bEnabled);
+
 	void ShiftWorlds();
 
 	UFUNCTION(BlueprintCallable)
-	void SetCanShiftWorlds(bool const bEnabled);
+	void PauseGame();
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWorldsShiftedDelegate, bool, bReversed);
 	UPROPERTY(BlueprintAssignable)
 	FOnWorldsShiftedDelegate OnWorldsShifted;
 
-private:
-	void CacheTileMaps();
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGamePausedDelegate, bool, bActive);
+	UPROPERTY(BlueprintAssignable)
+	FOnGamePausedDelegate OnGamePaused;
 
+private:
 	TArray<AActor*> CachedTileMapActors;
 
-	bool bCanShiftWorlds;
-	bool bIsReversed;
+	uint8 bCanShiftWorlds : 1;
+	uint8 bIsShifted : 1;
+	uint8 bIsPaused : 1;
 
 };
