@@ -43,7 +43,7 @@ void APaperPawn::BeginPlay()
 	Super::BeginPlay();
 
 	LevelCollisionObjectParams.AddObjectTypesToQuery(ECC_Level);
-	LevelCollisionShape.SetBox(PhysicsComponent->GetUnscaledBoxExtent() * FVector(1.f, 1.f, 0.f) + FVector(-2.f, -2.f, 8.f));
+	LevelCollisionShape.SetBox(PhysicsComponent->GetUnscaledBoxExtent() * FVector(1.f, 1.f, 0.f) + FVector(-2.f, -2.f, 16.f));
 	LevelCollisionParams.AddIgnoredActor(this);
 	LevelCollisionDelegate.BindUObject(this, &APaperPawn::LevelCollisionHandler);
 }
