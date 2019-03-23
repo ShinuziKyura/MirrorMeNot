@@ -13,6 +13,7 @@ APaperPlayer::APaperPlayer(FObjectInitializer const & ObjectInitializer)
 	, InputVector(FVector2D::ZeroVector)
 	, Health(2.9f)
 	, Invulnerable(-1.f)
+	, nLettersCaught(0)
 {
 }
 
@@ -130,9 +131,15 @@ void APaperPlayer::OnEntityOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 		case EEntityType::Collectable:
 			Entity->SetState(false);
 			OnCollectableFound.Broadcast(Entity);
+			nLettersCaught++;
 			break;
 		default:
 			break;
 		}
 	}
+}
+
+bool APaperPlayer::CaughtNLetters(int NumberOfLetters) const
+{
+	return nLettersCaught == NumberOfLetters;
 }

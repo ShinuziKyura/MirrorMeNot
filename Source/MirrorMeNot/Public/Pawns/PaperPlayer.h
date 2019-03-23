@@ -39,6 +39,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Paper Player | Status")
 	bool IsInvulnerable() const;
 
+	UFUNCTION(BlueprintPure, Category = "Paper Player | Status")
+	bool CaughtNLetters(int NumberOfLetters) const;
+
+
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDamageReceivedDelegate);
 	UPROPERTY(BlueprintAssignable)
 	FOnDamageReceivedDelegate OnDamageReceived;
@@ -64,6 +68,8 @@ private:
 	void OnEntityOverlap(UPrimitiveComponent * OverlappedComponent, AActor * OtherActor, UPrimitiveComponent * OtherComp, int32 OtherBodyIndex, bool bFromSweep, FHitResult const & SweepResult);
 
 	FVector2D InputVector;
+
+	int nLettersCaught;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Paper Player | Status", meta = (AllowPrivateAccess = "true"))
 	float Health;
