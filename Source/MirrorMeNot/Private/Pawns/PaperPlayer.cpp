@@ -42,6 +42,7 @@ void APaperPlayer::SetupPlayerInputComponent(UInputComponent * PlayerInputCompon
 	UMirrorMeNotGameInstance::BindAction(PlayerInputComponent, TEXT("Left"), this, &APaperPlayer::MoveLeft);
 	UMirrorMeNotGameInstance::BindAction(PlayerInputComponent, TEXT("Right"), this, &APaperPlayer::MoveRight);
 	UMirrorMeNotGameInstance::BindAction(PlayerInputComponent, TEXT("Shift"), this, &APaperPlayer::ShiftWorlds);
+	UMirrorMeNotGameInstance::BindAction(PlayerInputComponent, TEXT("Pause"), this, &APaperPlayer::PauseGame, true);
 }
 
 FVector2D APaperPlayer::GetInputVector() const
@@ -104,6 +105,17 @@ void APaperPlayer::ShiftWorlds(bool const bPressed)
 		if (auto const GameMode = Cast<AMirrorMeNotGameModeBase>(UGameplayStatics::GetGameMode(GetWorld())))
 		{
 			GameMode->ShiftWorlds();
+		}
+	}
+}
+
+void APaperPlayer::PauseGame(bool const bPressed)
+{
+	if (bPressed)
+	{
+		if (auto const GameMode = Cast<AMirrorMeNotGameModeBase>(UGameplayStatics::GetGameMode(GetWorld())))
+		{
+			GameMode->PauseGame();
 		}
 	}
 }
